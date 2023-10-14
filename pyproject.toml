@@ -23,3 +23,29 @@ flake8-comprehensions = "^3.14.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+show-source = true
+statistics = false
+doctests = true
+
+max-line-length = 120
+blank-line-before-imports = 2
+max-complexity = 4
+inline-quotes = "single"
+accept-encodings = "utf-8"
+isort-show-traceback = true
+
+exclude = [
+  ".git",
+  ".venv",
+  "migrations",
+  "__pycache__",
+]
+
+per-file-ignores = [
+  "models.py: A003",
+  "serializers.py: A003",
+  "*_dto.py: A003",
+  "__init__.py: F401",
+]
