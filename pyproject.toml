@@ -27,6 +27,7 @@ mypy = "^1.5.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.2"
+httpx = "^0.25.0"
 
 [build-system]
 requires = ["poetry-core"]
