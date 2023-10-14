@@ -71,3 +71,9 @@ exclude = [
   "migrations",
   ".venv",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  ".",
+  "src",
+]
