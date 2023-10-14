@@ -1,0 +1,11 @@
+.git
+.github
+**/.mypy_cache
+**/.pytest_cache
+.venv
+migrations
+tests
+.gitignore
+Makefile
+README.md
+.env
