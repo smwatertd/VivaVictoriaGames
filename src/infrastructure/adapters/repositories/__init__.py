@@ -1,0 +1,1 @@
+from infrastructure.adapters.repositories.games_repository import InMemoryGamesRepository
