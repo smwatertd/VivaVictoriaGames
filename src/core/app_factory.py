@@ -1,6 +1,6 @@
-from fastapi import FastAPI
+from entrypoints import all_views
 
-from views import all_views
+from fastapi import FastAPI
 
 
 def get_production_app() -> FastAPI:
