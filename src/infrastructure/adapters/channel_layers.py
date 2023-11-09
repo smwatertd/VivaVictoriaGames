@@ -1,26 +1,35 @@
 from collections import defaultdict
+from typing import Type
 
-from infrastructure.adapters.channels import RedisChannel
-from infrastructure.adapters.producers import RedisProducer
-from infrastructure.ports import ChannelLayer, WebSocketConnection
+from infrastructure.adapters.channels import Channel
+from infrastructure.ports.consumers import Consumer
+from infrastructure.ports.websocket_connections import WebSocketConnection
 
 
-class RedisChannelLayer(ChannelLayer):
-    channels: defaultdict[str, set[RedisChannel]] = defaultdict(set)
-    producer: RedisProducer = RedisProducer()
+class ChannelLayer:
+    channels: defaultdict[str, set[Channel]] = defaultdict(set)
+
+    def __init__(self, consumer_factory: Type[Consumer]) -> None:
+        self._consumer_factory = consumer_factory
 
     async def group_add(self, group: str, websocket: WebSocketConnection) -> None:
-        channel = RedisChannel(websocket)
+        channel = Channel(websocket, self._consumer_factory())
+        self._add_channel(group, channel)
         await channel.subscribe(group)
-        self.channels[group].add(channel)
         await channel.wait_for_message()
 
     async def group_discard(self, group: str, websocket: WebSocketConnection) -> None:
-        for channel in self.channels[group]:
-            if channel.websocket == websocket:
-                await channel.unsubscribe(group)
-                self.channels[group].remove(channel)
-                break
+        channel = self._get_channel(group, websocket)
+        await channel.unsubscribe(group)
+        self._remove_channel(group, channel)
 
-    async def group_send(self, group: str, message: dict) -> None:
-        await self.producer.publish(group, str(message))
+    def _add_channel(self, group: str, channel: Channel) -> None:
+        self.channels[group].add(channel)
+
+    def _remove_channel(self, group: str, channel: Channel) -> None:
+        self.channels[group].remove(channel)
+
+    def _get_channel(self, group: str, websocket: WebSocketConnection) -> Channel:
+        for channel in self.channels[group]:
+            if channel._websocket == websocket:
+                return channel
