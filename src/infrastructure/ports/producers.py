@@ -1,5 +1,7 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class Producer(ABC):
-    pass
+    @abstractmethod
+    async def publish(self, group: str, data: dict[str, str]) -> None:
+        pass
