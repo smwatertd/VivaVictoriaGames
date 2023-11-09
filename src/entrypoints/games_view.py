@@ -82,5 +82,13 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
         )
         await container.messagebus().handle(command, container.unit_of_work())
 
+    async def send_answer(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
+        command = commands.SendAnswer(
+            game_pk=self.data.game_pk,
+            user_pk=self.data.user_pk,
+            answer=data.get('answer_pk'),
+        )
+        await container.messagebus().handle(command, container.unit_of_work())
+
 
 router.add_websocket_route('/ws', GamesWebSocketEndpoint)
