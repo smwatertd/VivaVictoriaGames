@@ -8,5 +8,5 @@ class GamesRepository(ABC):
         self.seen: set[Game] = set()
 
     @abstractmethod
-    async def get(self, id: int) -> Game:
+    async def get(self, pk: int) -> Game:
         pass
