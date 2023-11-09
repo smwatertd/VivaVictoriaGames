@@ -8,6 +8,6 @@ class HealthSchema(BaseModel):
 
 
 class GamesConnectionSchema(BaseModel):
-    game_id: int
-    user_id: int
+    game_pk: int
+    user_pk: int
     username: str
