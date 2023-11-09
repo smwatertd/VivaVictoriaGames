@@ -12,6 +12,6 @@ class UnitOfWorkAdapter(UnitOfWork):
     async def publish_events(self) -> None:
         producer = RedisProducer()
         for game in self.games.seen:
-            for event in game.get_events():
-                await producer.publish(event.id, str(event.model_dump()))
+            for event in game.collect_events():
+                await producer.publish(event.game_pk, str(event.model_dump()))
             game._events.clear()
