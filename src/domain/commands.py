@@ -6,12 +6,18 @@ class Command(BaseModel):
 
 
 class AddUser(Command):
-    game_id: int
-    user_id: int
+    game_pk: int
+    user_pk: int
     username: str
 
 
 class RemoveUser(Command):
-    game_id: int
-    user_id: int
+    game_pk: int
+    user_pk: int
     username: str
+
+
+class AttackField(Command):
+    game_pk: int
+    attacker_pk: int
+    field_pk: int
