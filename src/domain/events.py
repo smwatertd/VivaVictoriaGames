@@ -5,19 +5,39 @@ class Event(BaseModel):
     pass
 
 
-class UserConnected(Event):
-    pk: int
-    user_pk: int
-
-
-class UserDisconnected(Event):
-    pk: int
-    user_pk: int
+class PlayerAdded(Event):
+    game_pk: int
+    player_pk: int
+    username: str
 
 
 class GameStarted(Event):
-    pk: int
+    game_pk: int
 
 
-class GameStarting(Event):
-    pk: int
+class PlayerTurnChanged(Event):
+    game_pk: int
+    player_pk: int
+
+
+class PlayerRemoved(Event):
+    game_pk: int
+    player_pk: int
+
+
+class FieldAttacked(Event):
+    game_pk: int
+    player_pk: int
+    field_pk: int
+
+
+class FieldCaptured(Event):
+    game_pk: int
+    player_pk: int
+    field_pk: int
+
+
+class DuelStarted(Event):
+    game_pk: int
+    attacker: int
+    defender: int
