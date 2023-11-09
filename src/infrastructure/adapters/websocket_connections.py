@@ -1,4 +1,4 @@
-from typing import Any
+import json
 
 from infrastructure.ports import WebSocketConnection
 
@@ -10,6 +10,5 @@ class StarletteWebSocketConnection(WebSocketConnection):
         super().__init__(websocket)
         self.websocket: WebSocket
 
-    async def send_json(self, data: Any) -> None:
-        # TODO: Fix data type annotation
-        pass
+    async def send_bytes(self, data: bytes) -> None:
+        await self.websocket.send_json(json.loads(data))

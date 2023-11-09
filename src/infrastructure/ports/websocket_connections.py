@@ -7,6 +7,10 @@ class WebSocketConnection(ABC):
         self.websocket = websocket
 
     @abstractmethod
-    async def send_json(self, data: Any) -> None:
-        # TODO: Fix data type annotation
+    async def send_bytes(self, data: bytes) -> None:
         pass
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, WebSocketConnection):
+            return False
+        return self.websocket == other.websocket
