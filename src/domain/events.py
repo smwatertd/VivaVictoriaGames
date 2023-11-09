@@ -1,8 +1,15 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
 class Event(BaseModel):
-    pass
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict:
+        result = super().model_dump(*args, **kwargs)
+        result.update({
+            'event_type': type(self).__name__,
+        })
+        return result
 
 
 class GameEvent(Event):
