@@ -21,3 +21,9 @@ class AttackField(Command):
     game_pk: int
     attacker_pk: int
     field_pk: int
+
+
+class SendAnswer(Command):
+    game_pk: int
+    player_pk: int
+    answer_pk: int
