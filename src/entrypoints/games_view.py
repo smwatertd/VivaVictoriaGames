@@ -2,13 +2,15 @@ from typing import Any
 
 from core.container import container
 
-from domain.commands import ConnectUser, DisconnectUser
+from domain import commands
 
 from entrypoints.schemas import GamesConnectionSchema
 
 from fastapi import APIRouter
 
-from infrastructure.ports import ChannelLayer
+from infrastructure.adapters.channel_layers import ChannelLayer
+from infrastructure.adapters.consumers import RedisConsumer
+from infrastructure.adapters.websocket_connections import StarletteWebSocketConnection
 
 from starlette.endpoints import WebSocketEndpoint
 from starlette.websockets import WebSocket
@@ -22,15 +24,16 @@ router = APIRouter(
 class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
     layer: ChannelLayer
     encoding = 'json'
-    actions: tuple[str]
 
     async def on_connect(self, websocket: WebSocket) -> None:
         # TODO: Delete Temp Data
         await super().on_connect(websocket)
         self._get_websocket_data(websocket)
+        await self.layer.group_add(self.data.game_pk, StarletteWebSocketConnection(websocket))
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         await super().on_disconnect(websocket, close_code)
+        await self.layer.group_discard(self.data.game_pk, StarletteWebSocketConnection(websocket))
 
     async def on_receive(self, websocket: WebSocket, data: Any) -> None:
         action, data = self._parse_message(data)
@@ -46,24 +49,37 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
     def _get_websocket_data(self, websocket: WebSocket) -> None:
         game = websocket.query_params.get('game', '1')[-1]
         username = websocket.query_params.get('username', 'anonymous')
-        user_id = username[-1]
-        self.data = GamesConnectionSchema(game_id=int(game), user_id=int(user_id), username=username)
+        user_pk = username[-1]
+        self.data = GamesConnectionSchema(game_pk=int(game), user_pk=int(user_pk), username=username)
 
 
 class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
-    layer = container.channel_layer()
-    actions = ('',)
+    layer: ChannelLayer = container.channel_layer(consumer_factory=RedisConsumer)
 
     async def on_connect(self, websocket: WebSocket) -> None:
         await super().on_connect(websocket)
-        await self.layer.group_add(self.data.game_id, websocket)
-        command = ConnectUser(game_id=self.data.game_id, user_id=self.data.user_id, username=self.data.username)
+        command = commands.AddUser(
+            game_pk=self.data.game_pk,
+            user_pk=self.data.user_pk,
+            username=self.data.username,
+        )
         await container.messagebus().handle(command, container.unit_of_work())
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         await super().on_disconnect(websocket, close_code)
-        await self.layer.group_discard(self.data.game_id, websocket)
-        command = DisconnectUser(game_id=self.data.game_id, user_id=self.data.user_id, username=self.data.username)
+        command = commands.RemoveUser(
+            game_pk=self.data.game_pk,
+            user_pk=self.data.user_pk,
+            username=self.data.username,
+        )
+        await container.messagebus().handle(command, container.unit_of_work())
+
+    async def attack_field(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
+        command = commands.AttackField(
+            game_pk=self.data.game_pk,
+            attacker_pk=self.data.user_pk,
+            field_pk=data.get('field_pk'),
+        )
         await container.messagebus().handle(command, container.unit_of_work())
 
 
