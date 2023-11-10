@@ -1,17 +1,17 @@
 import asyncio
+import json
 
+from infrastructure.ports import AbstractChannel, WebSocketConnection
 from infrastructure.ports.consumers import Consumer
-from infrastructure.ports.websocket_connections import WebSocketConnection
 
 
-class Channel:
+class Channel(AbstractChannel):
     def __init__(
         self,
         websocket: WebSocketConnection,
         message_consumer: Consumer,
     ) -> None:
-        self._websocket = websocket
-        self._message_consumer = message_consumer
+        super().__init__(websocket, message_consumer)
         self._wait_for_message_task: asyncio.Task | None = None
 
     async def wait_for_message(self) -> None:
@@ -27,4 +27,4 @@ class Channel:
 
     async def _wait_for_message(self) -> None:
         async for message in self._message_consumer.listen():
-            await self._websocket.send_bytes(message['data'])
+            await self._websocket.send_bytes(json.dumps(message.get_payload()))
