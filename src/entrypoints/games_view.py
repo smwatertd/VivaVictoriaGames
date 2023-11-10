@@ -12,7 +12,10 @@ from infrastructure.adapters.channel_layers import ChannelLayer
 from infrastructure.adapters.consumers import RedisConsumer
 from infrastructure.adapters.websocket_connections import StarletteWebSocketConnection
 
+from services.messagebus import MessageBus
+
 from starlette.endpoints import WebSocketEndpoint
+from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket
 
 
@@ -24,6 +27,10 @@ router = APIRouter(
 class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
     layer: ChannelLayer
     encoding = 'json'
+
+    def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        super().__init__(scope, receive, send)
+        self.messagebus: MessageBus = container.messagebus()
 
     async def on_connect(self, websocket: WebSocket) -> None:
         # TODO: Delete Temp Data
@@ -63,7 +70,7 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
             user_pk=self.data.user_pk,
             username=self.data.username,
         )
-        await container.messagebus().handle(command, container.unit_of_work())
+        await self.messagebus.handle(command, container.unit_of_work())
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         await super().on_disconnect(websocket, close_code)
@@ -72,7 +79,7 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
             user_pk=self.data.user_pk,
             username=self.data.username,
         )
-        await container.messagebus().handle(command, container.unit_of_work())
+        await self.messagebus.handle(command, container.unit_of_work())
 
     async def attack_field(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
         command = commands.AttackField(
@@ -80,7 +87,7 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
             attacker_pk=self.data.user_pk,
             field_pk=data.get('field_pk'),
         )
-        await container.messagebus().handle(command, container.unit_of_work())
+        await self.messagebus.handle(command, container.unit_of_work())
 
     async def send_answer(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
         command = commands.SendAnswer(
@@ -88,7 +95,7 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
             user_pk=self.data.user_pk,
             answer=data.get('answer_pk'),
         )
-        await container.messagebus().handle(command, container.unit_of_work())
+        await self.messagebus.handle(command, container.unit_of_work())
 
 
 router.add_websocket_route('/ws', GamesWebSocketEndpoint)
