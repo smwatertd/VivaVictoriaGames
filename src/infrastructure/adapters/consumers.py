@@ -1,7 +1,8 @@
-from typing import AsyncIterator
+from typing import AsyncGenerator
 
 import aioredis
 
+from infrastructure.adapters import messages
 from infrastructure.ports import Consumer
 
 import pika
@@ -19,8 +20,9 @@ class RedisConsumer(Consumer):
         await self.pubsub.unsubscribe(group)
         await self.redis.close()
 
-    def listen(self) -> AsyncIterator:
-        return self.pubsub.listen()
+    async def listen(self) -> AsyncGenerator[messages.RedisMessage, None]:
+        async for message in self.pubsub.listen():
+            yield messages.RedisMessage(message)
 
 
 class RabbitMQConsumer(Consumer):
@@ -38,5 +40,6 @@ class RabbitMQConsumer(Consumer):
     async def unsubscribe(self, group: str) -> None:
         self.channel.queue_unbind(queue=group, exchange='games')
 
-    def listen(self) -> AsyncIterator:
-        return self.channel.consume(queue='game.events', auto_ack=True)
+    async def listen(self) -> AsyncGenerator[messages.RabbitMQMessage, None]:
+        for message in self.channel.consume(queue='game.events', auto_ack=True):
+            yield messages.RabbitMQMessage(*message)
