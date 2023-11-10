@@ -2,11 +2,15 @@ from typing import Any
 
 from dependency_injector import containers, providers
 
-from infrastructure.adapters import ChannelLayer
-from infrastructure.adapters import UnitOfWorkAdapter
+from infrastructure.adapters import (
+    ChannelLayer,
+    MessageDispatcher,
+    MessageParser,
+    UnitOfWorkAdapter,
+)
 from infrastructure.adapters import repositories as adapters_repositories
 from infrastructure.adapters.consumers import RabbitMQConsumer
-from infrastructure.adapters.producers import RabbitMQProducer
+from infrastructure.adapters.producers import RabbitMQProducer, RedisProducer
 from infrastructure.ports import UnitOfWork
 from infrastructure.ports import repositories as ports_repositories
 
@@ -47,12 +51,28 @@ class Container(containers.DeclarativeContainer):
         ChannelLayer,
     )
 
+    message_parser: Any = providers.Singleton(
+        MessageParser,
+    )
+
+    message_dispatcher: Any = providers.Factory(
+        MessageDispatcher,
+        consumer=event_consumer,
+        parser=message_parser,
+        messagebus=messagebus,
+    )
+
+    message_producer: Any = providers.Factory(
+        RedisProducer,
+    )
+
     unit_of_work: UnitOfWork = providers.Factory(
         UnitOfWorkAdapter,
         games=games_repository,
         players=players_repository,
         fields=fields_repository,
         event_producer=event_producer,
+        message_producer=message_producer,
     )
 
 
