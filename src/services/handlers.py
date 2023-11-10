@@ -42,6 +42,10 @@ async def send_connection_notification(event: events.PlayerAdded, uow: UnitOfWor
     await uow.message_producer.publish(event.game_pk, event.model_dump())
 
 
+async def send_disconnection_notification(event: events.PlayerRemoved, uow: UnitOfWork) -> None:
+    await uow.message_producer.publish(event.game_pk, event.model_dump())
+
+
 COMMAND_HANDLERS = {
     commands.AddUser: connect_user,
     commands.RemoveUser: disconnect_user,
@@ -51,4 +55,5 @@ COMMAND_HANDLERS = {
 
 EVENT_HANDLERS: dict[Type[events.Event], tuple[Callable, ...]] = {
     events.PlayerAdded: (send_connection_notification,),
+    events.PlayerRemoved: (send_disconnection_notification,),
 }
