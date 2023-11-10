@@ -13,3 +13,7 @@ class PlayersRepository(Repository, ABC):
     @abstractmethod
     async def get(self, pk: int) -> Player:
         pass
+
+    @abstractmethod
+    async def create(self, player: Player) -> Player:
+        pass
