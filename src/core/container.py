@@ -25,6 +25,10 @@ class Container(containers.DeclarativeContainer):
         adapters_repositories.InMemoryPlayersRepository,
     )
 
+    fields_repository: ports_repositories.FieldsRepository = providers.Factory(
+        adapters_repositories.InMemoryFieldsRepository,
+    )
+
     event_producer: Any = providers.Factory(
         RabbitMQProducer,
     )
@@ -47,6 +51,7 @@ class Container(containers.DeclarativeContainer):
         UnitOfWorkAdapter,
         games=games_repository,
         players=players_repository,
+        fields=fields_repository,
         event_producer=event_producer,
     )
 
