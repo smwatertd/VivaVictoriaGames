@@ -3,18 +3,24 @@ from typing import Any, Generator
 
 from domain.events import Event
 
+from infrastructure.ports import repositories
 from infrastructure.ports.producers import Producer
-from infrastructure.ports.repositories import GamesRepository
 
 
 class UnitOfWork(ABC):
     def __init__(
         self,
-        games: GamesRepository,
+        games: repositories.GamesRepository,
+        players: repositories.PlayersRepository,
+        fields: repositories.FieldsRepository,
         event_producer: Producer,
+        message_producer: Producer,
     ) -> None:
         self.games = games
+        self.players = players
+        self.fields = fields
         self._event_producer = event_producer
+        self.message_producer = message_producer
 
     async def __aenter__(self) -> 'UnitOfWork':
         return self
