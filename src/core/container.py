@@ -2,9 +2,10 @@ from typing import Any
 
 from dependency_injector import containers, providers
 
+from infrastructure.adapters import ChannelLayer
 from infrastructure.adapters import UnitOfWorkAdapter
 from infrastructure.adapters import repositories as adapters_repositories
-from infrastructure.adapters.channel_layers import ChannelLayer
+from infrastructure.adapters.consumers import RabbitMQConsumer
 from infrastructure.adapters.producers import RabbitMQProducer
 from infrastructure.ports import UnitOfWork
 from infrastructure.ports import repositories as ports_repositories
@@ -20,14 +21,16 @@ class Container(containers.DeclarativeContainer):
         adapters_repositories.InMemoryGamesRepository,
     )
 
+    players_repository: ports_repositories.PlayersRepository = providers.Factory(
+        adapters_repositories.InMemoryPlayersRepository,
+    )
+
     event_producer: Any = providers.Factory(
         RabbitMQProducer,
     )
 
-    unit_of_work: UnitOfWork = providers.Factory(
-        UnitOfWorkAdapter,
-        games=games_repository,
-        event_producer=event_producer,
+    event_consumer: Any = providers.Factory(
+        RabbitMQConsumer,
     )
 
     messagebus: Any = providers.Singleton(
@@ -38,6 +41,13 @@ class Container(containers.DeclarativeContainer):
 
     channel_layer: Any = providers.Singleton(
         ChannelLayer,
+    )
+
+    unit_of_work: UnitOfWork = providers.Factory(
+        UnitOfWorkAdapter,
+        games=games_repository,
+        players=players_repository,
+        event_producer=event_producer,
     )
 
 
