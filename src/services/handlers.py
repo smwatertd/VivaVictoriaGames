@@ -6,6 +6,9 @@ from domain.models.player import Player
 from infrastructure.ports import UnitOfWork
 
 
+DUEL_TIMEOUT = 10
+
+
 async def connect_user(command: commands.AddUser, uow: UnitOfWork) -> None:
     async with uow:
         player = await uow.players.create(Player(pk=command.user_pk, username=command.username))
@@ -32,10 +35,11 @@ async def attack_field(command: commands.AttackField, uow: UnitOfWork) -> None:
 
 
 async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
-    async with uow:
-        # game = await uow.games.get(pk=command.game_pk)
-        # game.send_answer()
-        await uow.commit()
+    pass
+
+
+async def send_connection_notification(event: events.PlayerAdded, uow: UnitOfWork) -> None:
+    await uow.message_producer.publish(event.game_pk, event.model_dump())
 
 
 COMMAND_HANDLERS = {
@@ -46,4 +50,5 @@ COMMAND_HANDLERS = {
 }
 
 EVENT_HANDLERS: dict[Type[events.Event], tuple[Callable, ...]] = {
+    events.PlayerAdded: (send_connection_notification,),
 }
