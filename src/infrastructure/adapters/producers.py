@@ -2,7 +2,7 @@ import json
 
 import aioredis
 
-from infrastructure.ports import Producer
+from infrastructure.ports.producers import Producer
 
 import pika
 
@@ -23,4 +23,13 @@ class RabbitMQProducer(Producer):
         self.channel = self.connection.channel()
 
     async def publish(self, group: str, data: dict[str, str]) -> None:
-        self.channel.basic_publish(exchange='games', routing_key='games.events.all', body=json.dumps(data))
+        props = pika.BasicProperties(headers={
+            'message_type': 'event',
+            'payload_type': data['event_type'],
+        })
+        self.channel.basic_publish(
+            exchange='games',
+            routing_key='games.events.all',
+            body=json.dumps(data),
+            properties=props,
+        )
