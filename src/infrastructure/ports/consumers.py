@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import AsyncIterator
+from typing import AsyncGenerator
+
+from infrastructure.ports.messages import Message
 
 
 class Consumer(ABC):
@@ -12,5 +14,5 @@ class Consumer(ABC):
         pass
 
     @abstractmethod
-    def listen(self) -> AsyncIterator:
+    async def listen(self) -> AsyncGenerator[Message, None]:
         pass
