@@ -28,7 +28,7 @@ class MessageBus:
         elif isinstance(message, Event):
             await self._handle_event(message, uow)
         else:
-            raise InvalidMessageType
+            raise InvalidMessageType(type(message))
         await uow.publish_events()
 
     async def _handle_command(self, command: Command, uow: UnitOfWork) -> None:
