@@ -37,14 +37,19 @@ class PlayerRemoved(GameEvent):
     player_pk: int
 
 
-class FieldAttacked(GameEvent):
+class FieldAttacked(FieldEvent):
     attacker_pk: int
 
 
-class FieldCaptured(GameEvent):
+class FieldCaptured(FieldEvent):
     capturer_pk: int
 
 
 class DuelStarted(GameEvent):
-    attacker: int
-    defender: int
+    attacker_pk: int
+    defender_pk: int
+
+
+class QuestionSet(GameEvent):
+    question_pk: int
+    answers: list[tuple[int, str]]
