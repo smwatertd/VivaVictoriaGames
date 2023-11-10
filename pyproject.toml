@@ -16,6 +16,7 @@ redis = "^5.0.1"
 aioredis = "^2.0.1"
 dependency-injector = "^4.41.0"
 aio-pika = "^9.3.0"
+sqlalchemy = "^2.0.23"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.5.0"
