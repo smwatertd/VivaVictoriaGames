@@ -57,4 +57,5 @@ EVENT_HANDLERS: dict[Type[events.Event], tuple[Callable, ...]] = {
     events.FieldAttacked: (send_message_notification,),
     events.FieldCaptured: (send_message_notification,),
     events.DuelStarted: (send_message_notification,),
+    events.QuestionSet: (send_message_notification,),
 }
