@@ -38,11 +38,7 @@ async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
     pass
 
 
-async def send_connection_notification(event: events.PlayerAdded, uow: UnitOfWork) -> None:
-    await uow.message_producer.publish(event.game_pk, event.model_dump())
-
-
-async def send_disconnection_notification(event: events.PlayerRemoved, uow: UnitOfWork) -> None:
+async def send_message_notification(event: events.GameEvent, uow: UnitOfWork) -> None:
     await uow.message_producer.publish(event.game_pk, event.model_dump())
 
 
@@ -54,6 +50,11 @@ COMMAND_HANDLERS = {
 }
 
 EVENT_HANDLERS: dict[Type[events.Event], tuple[Callable, ...]] = {
-    events.PlayerAdded: (send_connection_notification,),
-    events.PlayerRemoved: (send_disconnection_notification,),
+    events.PlayerAdded: (send_message_notification,),
+    events.PlayerRemoved: (send_message_notification,),
+    events.GameStarted: (send_message_notification,),
+    events.PlayerTurnChanged: (send_message_notification,),
+    events.FieldAttacked: (send_message_notification,),
+    events.FieldCaptured: (send_message_notification,),
+    events.DuelStarted: (send_message_notification,),
 }
