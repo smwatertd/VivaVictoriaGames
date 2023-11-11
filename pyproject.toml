@@ -18,6 +18,7 @@ dependency-injector = "^4.41.0"
 aio-pika = "^9.3.0"
 sqlalchemy = "^2.0.23"
 asyncpg = "^0.29.0"
+alembic = "^1.12.1"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.5.0"
