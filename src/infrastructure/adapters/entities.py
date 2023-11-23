@@ -55,20 +55,20 @@ class QuestionEntity(Base):
 
     pk: Mapped[int] = mapped_column(primary_key=True)
 
-    # answers: Mapped[list['AnswerEntity']] = relationship('AnswerEntity', back_populates='question')
+    answers: Mapped[list['AnswerEntity']] = relationship('AnswerEntity', back_populates='question')
 
     def __repr__(self) -> str:
         return f'Question(pk={self.pk}'
 
 
-# class AnswerEntity(Base):
-#     __tablename__ = 'answers'
+class AnswerEntity(Base):
+    __tablename__ = 'answers'
 
-#     pk: Mapped[int] = mapped_column(primary_key=True)
-#     question_id: Mapped[int] = mapped_column(ForeignKey('questions.pk'))
-#     is_correct: Mapped[bool] = mapped_column(default=False)
+    pk: Mapped[int] = mapped_column(primary_key=True)
+    question_id: Mapped[int] = mapped_column(ForeignKey('questions.pk'))
+    is_correct: Mapped[bool] = mapped_column(default=False)
 
-#     question: Mapped['QuestionEntity'] = relationship('QuestionEntity', uselist=False, back_populates='answers')
+    question: Mapped['QuestionEntity'] = relationship('QuestionEntity', uselist=False, back_populates='answers')
 
-#     def __repr__(self) -> str:
-#         return f'Answer(pk={self.pk}, is_correct={self.is_correct})'
+    def __repr__(self) -> str:
+        return f'Answer(pk={self.pk}, is_correct={self.is_correct})'
