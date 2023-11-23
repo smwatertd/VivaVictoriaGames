@@ -1,6 +1,5 @@
-# from sqlalchemy import ForeignKey
-# from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -13,8 +12,9 @@ class GameEntity(Base):
     pk: Mapped[int] = mapped_column(primary_key=True)
     state: Mapped[str] = mapped_column(server_default='players_waiting')
     round_number: Mapped[int] = mapped_column(default=0)
-    # question_id: Mapped[int | None] = mapped_column(ForeignKey('questions.pk'))
+    question_id: Mapped[int | None] = mapped_column(ForeignKey('questions.pk'))
 
+    question: Mapped['QuestionEntity'] = relationship('QuestionEntity', uselist=False, back_populates='game')
     # players: Mapped[list['PlayerEntity']] = relationship('PlayerEntity', back_populates='game')
     # fields: Mapped[list['FieldEntity']] = relationship('FieldEntity', back_populates='game')
 
@@ -30,7 +30,7 @@ class GameEntity(Base):
 #     game_id: Mapped[int] = mapped_column(ForeignKey('games.pk'))
 
 #     game: Mapped['GameEntity'] = relationship('GameEntity', uselist=False, back_populates='players')
-#     fields: Mapped[list['FieldEntity']] = relationship('FieldEntity', back_populates='owner')
+#     # fields: Mapped[list['FieldEntity']] = relationship('FieldEntity', back_populates='owner')
 
 #     def __repr__(self) -> str:
 #         return f'Player(pk={self.pk}, username={self.username})'
@@ -50,15 +50,15 @@ class GameEntity(Base):
 #         return f'Field(pk={self.pk}, owner={self.owner})'
 
 
-# class QuestionEntity(Base):
-#     __tablename__ = 'questions'
+class QuestionEntity(Base):
+    __tablename__ = 'questions'
 
-#     pk: Mapped[int] = mapped_column(primary_key=True)
+    pk: Mapped[int] = mapped_column(primary_key=True)
 
-#     answers: Mapped[list['AnswerEntity']] = relationship('AnswerEntity', back_populates='question')
+    # answers: Mapped[list['AnswerEntity']] = relationship('AnswerEntity', back_populates='question')
 
-#     def __repr__(self) -> str:
-#         return f'Question(pk={self.pk}'
+    def __repr__(self) -> str:
+        return f'Question(pk={self.pk}'
 
 
 # class AnswerEntity(Base):
