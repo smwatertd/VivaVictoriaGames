@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generator
+from typing import Generator
 
 from domain.events import Event
 
@@ -8,24 +8,16 @@ from infrastructure.ports.producers import Producer
 
 
 class UnitOfWork(ABC):
-    def __init__(
-        self,
-        games: repositories.GamesRepository,
-        players: repositories.PlayersRepository,
-        fields: repositories.FieldsRepository,
-        event_producer: Producer,
-        message_producer: Producer,
-    ) -> None:
-        self.games = games
-        self.players = players
-        self.fields = fields
+    def __init__(self, event_producer: Producer) -> None:
+        self.games: repositories.GamesRepository
+        self.players: repositories.PlayersRepository
+        self.fields: repositories.FieldsRepository
         self._event_producer = event_producer
-        self.message_producer = message_producer
 
     async def __aenter__(self) -> 'UnitOfWork':
         return self
 
-    async def __aexit__(self, *args: Any, **kwargs: Any) -> None:
+    async def __aexit__(self) -> None:
         await self.rollback()
 
     @abstractmethod
