@@ -23,14 +23,27 @@ class RedisSettings(BaseSettings):
     )
 
 
-class PostgresSettings(BaseSettings):
+class DatabaseSettings(BaseSettings):
+    dialect: str = 'postgresql+asyncpg'
+    options: str = '?async_fallback=true'
+
     host: str = 'localhost'
     port: int = 5432
-    db: str = 'games'
-    user: str = 'me'
-    password: str = '5'
+    name: str = 'postgres'
+    user: str = 'postgres'
+    password: str = 'postgres'
+    echo: bool = False
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_prefix='DB_',
+    )
+
+    @property
+    def url(self) -> str:
+        return f'{self.dialect}://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}{self.options}'
 
 
 app_settings = AppSettings()
 redis_settings = RedisSettings()
-postgres_settings = PostgresSettings()
+db_settings = DatabaseSettings()
