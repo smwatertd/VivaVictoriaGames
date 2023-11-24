@@ -8,10 +8,11 @@ from infrastructure.ports.producers import Producer
 
 
 class UnitOfWork(ABC):
+    games: repositories.GamesRepository
+    players: repositories.PlayersRepository
+    fields: repositories.FieldsRepository
+
     def __init__(self, event_producer: Producer) -> None:
-        self.games: repositories.GamesRepository
-        self.players: repositories.PlayersRepository
-        self.fields: repositories.FieldsRepository
         self._event_producer = event_producer
 
     async def __aenter__(self) -> 'UnitOfWork':
