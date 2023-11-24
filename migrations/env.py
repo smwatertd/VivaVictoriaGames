@@ -2,7 +2,9 @@ from logging.config import fileConfig
 
 from alembic import context
 
-from infrastructure.adapters.entities import Base
+from core.settings import db_settings
+
+from infrastructure.adapters.entities import metadata
 
 from sqlalchemy import engine_from_config, pool
 
@@ -12,13 +14,13 @@ section = config.config_ini_section
 config.set_section_option(
     section,
     'sqlalchemy.url',
-    'postgresql+asyncpg://me:5@localhost:5432/games?async_fallback=true',
+    db_settings.url,
 )
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = metadata
 
 
 def run_migrations_offline() -> None:
@@ -60,7 +62,8 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata,
+            connection=connection,
+            target_metadata=target_metadata,
         )
 
         with context.begin_transaction():
