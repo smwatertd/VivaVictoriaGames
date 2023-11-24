@@ -1,3 +1,5 @@
+from typing import Any
+
 from core.settings import db_settings
 
 from infrastructure.adapters import repositories
@@ -31,8 +33,8 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self.fields = repositories.SQLAlchemyFieldsRepository(self._session)
         return await super().__aenter__()
 
-    async def __aexit__(self) -> None:
-        return await super().__aexit__()
+    async def __aexit__(self, *args: Any, **kwargs: Any) -> None:
+        return await super().__aexit__(args, kwargs)
 
     async def rollback(self) -> None:
         await self._session.rollback()

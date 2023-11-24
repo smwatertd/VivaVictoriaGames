@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generator
+from typing import Any, Generator
 
 from domain.events import Event
 
@@ -18,7 +18,7 @@ class UnitOfWork(ABC):
     async def __aenter__(self) -> 'UnitOfWork':
         return self
 
-    async def __aexit__(self) -> None:
+    async def __aexit__(self, *args: Any, **kwargs: Any) -> None:
         await self.rollback()
 
     @abstractmethod
