@@ -1,3 +1,9 @@
-from infrastructure.adapters.repositories.fields_repository import InMemoryFieldsRepository
-from infrastructure.adapters.repositories.games_repository import InMemoryGamesRepository
-from infrastructure.adapters.repositories.players_repository import InMemoryPlayersRepository
+from infrastructure.adapters.repositories.fields_repository import (
+    InMemoryFieldsRepository,
+    SQLAlchemyFieldsRepository,
+)
+from infrastructure.adapters.repositories.games_repository import (
+    InMemoryGamesRepository,
+    SQLAlchemyGamesRepository,
+)
+from infrastructure.adapters.repositories.players_repository import SQLAlchemyPlayersRepository
