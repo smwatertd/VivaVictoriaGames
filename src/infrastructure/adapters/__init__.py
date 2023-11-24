@@ -2,4 +2,4 @@ from infrastructure.adapters.channel_layers import ChannelLayer
 from infrastructure.adapters.channels import Channel
 from infrastructure.adapters.message_dispatcher import MessageDispatcher
 from infrastructure.adapters.message_parser import MessageParser
-from infrastructure.adapters.unit_of_work import UnitOfWorkAdapter
+from infrastructure.adapters.unit_of_work import SQLAlchemyUnitOfWork
