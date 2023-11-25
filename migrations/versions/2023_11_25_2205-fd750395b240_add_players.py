@@ -1,8 +1,8 @@
 """add players
 
-Revision ID: 234573977a22
-Revises: 104688f6f8bd
-Create Date: 2023-11-25 04:29:44.690506
+Revision ID: fd750395b240
+Revises: 2799b3e4eea0
+Create Date: 2023-11-25 22:05:12.100141
 
 """
 from typing import Sequence, Union
@@ -13,8 +13,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '234573977a22'
-down_revision: Union[str, None] = '104688f6f8bd'
+revision: str = 'fd750395b240'
+down_revision: Union[str, None] = '2799b3e4eea0'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
