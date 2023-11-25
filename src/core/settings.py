@@ -44,6 +44,16 @@ class DatabaseSettings(BaseSettings):
         return f'{self.dialect}://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}{self.options}'
 
 
+class GameSettings(BaseSettings):
+    players_count_to_start: int = 3
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_prefix='GAME_',
+    )
+
+
 app_settings = AppSettings()
 redis_settings = RedisSettings()
 db_settings = DatabaseSettings()
+game_settings = GameSettings()
