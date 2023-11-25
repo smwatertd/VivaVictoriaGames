@@ -9,11 +9,11 @@ from questions import Question, get_random_question
 PLAYERS_COUNT = 2
 
 
-def select_player_order_by_pk(
+def select_player_order_by_id(
     players: list[Player],
     player_order: Player | None = None,
 ) -> Player:
-    sorted_players = sorted(players, key=lambda player: player.pk)
+    sorted_players = sorted(players, key=lambda player: player._id)
     if player_order:
         player_index = sorted_players.index(player_order)
         for i in range(player_index + 1, len(sorted_players)):
@@ -24,14 +24,14 @@ def select_player_order_by_pk(
 class Game(Model):
     def __init__(
         self,
-        pk: int,
+        id: int,
         players: list[Player],
         state: enums.GameState,
         fields: list[Field],
         player_order: Player | None = None,
         question: Question | None = None,
     ) -> None:
-        super().__init__(pk)
+        super().__init__(id)
         self._players = players
         self._state = state
         self._player_order = player_order
@@ -39,8 +39,13 @@ class Game(Model):
         self._question = question
 
     def __repr__(self) -> str:
-        return """Game(pk={}, players={}, state={}, player_order={}, fields={}), question={}""".format(
-            self._pk, self._players, self._state, self._player_order, self._fields, self._question,
+        return """Game(id={}, players={}, state={}, player_order={}, fields={}), question={}""".format(
+            self._id,
+            self._players,
+            self._state,
+            self._player_order,
+            self._fields,
+            self._question,
         )
 
     def add_player(self, player: Player) -> None:
@@ -63,11 +68,13 @@ class Game(Model):
 
     def _add_player(self, player: Player) -> None:
         self._players.append(player)
-        self._register_event(events.PlayerAdded(
-            game_pk=self._pk,
-            player_pk=player.pk,
-            username=player.username,
-        ))
+        self._register_event(
+            events.PlayerAdded(
+                game_id=self._id,
+                player_id=player._id,
+                username=player._username,
+            ),
+        )
 
     def _try_start(self) -> None:
         if self._can_start():
@@ -75,33 +82,42 @@ class Game(Model):
 
     def _remove_player(self, player: Player) -> None:
         self._players.remove(player)
-        self._register_event(events.PlayerRemoved(
-            game_pk=self._pk,
-            player_pk=player.pk,
-        ))
+        self._register_event(
+            events.PlayerRemoved(
+                game_id=self._id,
+                player_id=player._id,
+            ),
+        )
 
     def _can_start(self) -> bool:
-        return len(self._players) == PLAYERS_COUNT and self._state == enums.GameState.PLAYERS_WAITING
+        return (
+            len(self._players) == PLAYERS_COUNT
+            and self._state == enums.GameState.PLAYERS_WAITING
+        )
 
     def _start(self) -> None:
         self._set_state(enums.GameState.STARTED)
-        self._set_player_order(select_player_order_by_pk(self._players))
+        self._set_player_order(select_player_order_by_id(self._players))
 
     def _set_state(self, state: enums.GameState) -> None:
         self._state = state
         if state == enums.GameState.STARTED:
-            self._register_event(events.GameStarted(
-                game_pk=self._pk,
-                state=state,
-            ))
+            self._register_event(
+                events.GameStarted(
+                    game_id=self._id,
+                    state=state,
+                ),
+            )
 
     def _set_player_order(self, player_order: Player) -> None:
         self._player_order = player_order
         self._set_state(enums.GameState.ATTACK_WAITING)
-        self._register_event(events.PlayerTurnChanged(
-            game_pk=self._pk,
-            player_pk=player_order.pk,
-        ))
+        self._register_event(
+            events.PlayerTurnChanged(
+                game_id=self._id,
+                player_id=player_order.id,
+            ),
+        )
 
     def _ensure_can_attack(self, attacker: Player, field: Field) -> None:
         if self._state != enums.GameState.ATTACK_WAITING:
@@ -109,14 +125,16 @@ class Game(Model):
         if self._player_order != attacker:
             raise exceptions.NotYourTurn
         if field not in self._fields:
-            raise exceptions.FieldNotFound(field._pk)
+            raise exceptions.FieldNotFound(field._id)
 
     def _attack_field(self, attacker: Player, field: Field) -> None:
-        self._register_event(events.FieldAttacked(
-            game_pk=self._pk,
-            field_pk=field._pk,
-            attacker_pk=attacker.pk,
-        ))
+        self._register_event(
+            events.FieldAttacked(
+                game_id=self._id,
+                field_id=field._id,
+                attacker_id=attacker.id,
+            ),
+        )
         self._try_capture(attacker, field)
 
     def _try_capture(self, attacker: Player, field: Field) -> None:
@@ -128,30 +146,35 @@ class Game(Model):
 
     def _start_duel(self, attacker: Player, defender: Player) -> None:
         self._set_state(enums.GameState.DUELING)
-        self._register_event(events.DuelStarted(
-            game_pk=self._pk,
-            attacker_pk=attacker.pk,
-            defender_pk=defender.pk,
-        ))
+        self._register_event(
+            events.DuelStarted(
+                game_id=self._id,
+                attacker_id=attacker.id,
+                defender_id=defender.id,
+            ),
+        )
         # TODO: Redo with event consumer
         self._set_question(get_random_question())
 
     def _capture(self, capturer: Player, field: Field) -> None:
         field.set_owner(capturer)
-        self._register_event(events.FieldCaptured(
-            game_pk=self._pk,
-            field_pk=field._pk,
-            capturer_pk=capturer.pk,
-        ))
-        self._set_player_order(select_player_order_by_pk(self._players, self._player_order))
+        self._register_event(
+            events.FieldCaptured(
+                game_id=self._id,
+                field_id=field._id,
+                capturer_id=capturer.id,
+            ),
+        )
+        self._set_player_order(
+            select_player_order_by_id(self._players, self._player_order),
+        )
 
     def _set_question(self, question: Question) -> None:
         self._question = question
-        self._register_event(events.QuestionSet(
-            game_pk=self._pk,
-            question_pk=question.pk,
-            answers=[
-                (answer.pk, answer.body)
-                for answer in question.answers
-            ],
-        ))
+        self._register_event(
+            events.QuestionSet(
+                game_id=self._id,
+                question_id=question.id,
+                answers=[(answer.id, answer.body) for answer in question.answers],
+            ),
+        )

@@ -6,19 +6,19 @@ from domain.models.player import Player
 class Field(Model):
     def __init__(
         self,
-        pk: int,
+        id: int,
         owner: Player | None = None,
     ) -> None:
-        super().__init__(pk)
+        super().__init__(id)
         self._owner = owner
 
     def __repr__(self) -> str:
-        return f'Field(pk={self._pk}, owner={self._owner})'
+        return f'Field(id={self._id}, owner={self._owner})'
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, Field):
             return False
-        return self._pk == __value._pk
+        return self._id == __value._id
 
     def is_captured(self) -> bool:
         return self._owner is not None
