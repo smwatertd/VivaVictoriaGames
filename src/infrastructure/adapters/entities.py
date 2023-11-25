@@ -1,4 +1,4 @@
-from domain import enums
+from domain import enums, models
 
 from sqlalchemy import (
     Boolean,
@@ -10,7 +10,7 @@ from sqlalchemy import (
     String,
     Table,
 )
-from sqlalchemy.orm import registry
+from sqlalchemy.orm import registry, relationship
 
 
 metadata = MetaData()
@@ -59,3 +59,77 @@ answers = Table(
     Column('is_correct', Boolean, default=False, server_default='false'),
     Column('question_id', Integer, ForeignKey('questions.id')),
 )
+
+
+def start_mappers() -> None:
+    mapper.dispose()
+    mapper.map_imperatively(
+        models.Answer,
+        answers,
+        properties={
+            '_question': relationship(
+                models.Question,
+                back_populates='_answers',
+                uselist=False,
+            ),
+        },
+    )
+    mapper.map_imperatively(
+        models.Question,
+        questions,
+        properties={
+            '_answers': relationship(
+                models.Answer,
+                back_populates='_question',
+            ),
+        },
+    )
+    mapper.map_imperatively(
+        models.Field,
+        fields,
+        properties={
+            '_game': relationship(
+                models.Game,
+                back_populates='_fields',
+                uselist=False,
+            ),
+            '_owner': relationship(
+                models.Player,
+                back_populates='_fields',
+                uselist=False,
+            ),
+        },
+    )
+    mapper.map_imperatively(
+        models.Player,
+        players,
+        properties={
+            '_game': relationship(
+                models.Game,
+                back_populates='_players',
+                uselist=False,
+            ),
+            '_fields': relationship(
+                models.Field,
+                back_populates='_owner',
+            ),
+        },
+    )
+    mapper.map_imperatively(
+        models.Game,
+        games,
+        properties={
+            '_question': relationship(
+                models.Question,
+                uselist=False,
+            ),
+            '_players': relationship(
+                models.Player,
+                back_populates='_game',
+            ),
+            '_fields': relationship(
+                models.Field,
+                back_populates='_game',
+            ),
+        },
+    )
