@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 SQLALCHEMY_DEFAULT_SESSION_FACTORY = async_sessionmaker(
     bind=create_async_engine(db_settings.url, echo=db_settings.echo),
     class_=AsyncSession,
+    expire_on_commit=False,
 )
 
 
