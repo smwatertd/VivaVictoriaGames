@@ -20,13 +20,27 @@ class FieldEvent(GameEvent):
     field_pk: int
 
 
-class PlayerAdded(GameEvent):
-    player_pk: int
+class PlayerAdded(Event):
+    game_id: int
+    player_id: int
     username: str
 
 
 class GameStarted(GameEvent):
     pass
+
+
+class GameFull(Event):
+    game_id: int
+
+
+class GameStateChanged(Event):
+    game_id: int
+    state: str
+
+
+class GameClosed(Event):
+    game_id: int
 
 
 class PlayerTurnChanged(GameEvent):
@@ -53,3 +67,7 @@ class DuelStarted(GameEvent):
 class QuestionSet(GameEvent):
     question_pk: int
     answers: list[tuple[int, str]]
+
+
+class AllPlayersConnected(Event):
+    game_id: int

@@ -1,31 +1,106 @@
-from domain import value_objects
-from domain.models import Game
+from core.settings import game_settings
+
+from domain import enums, events, exceptions, models
 
 import pytest
 
-from tests.test_case import TestCase
+
+def get_players(players_count: int) -> list[models.Player]:
+    return [
+        models.Player(id=i, username=f'player_{i}') for i in range(1, players_count + 1)
+    ]
 
 
-def generate_players(count: int) -> value_objects.Player:
-    return tuple(
-        value_objects.Player(i)
-        for i in range(1, count + 1)
+def get_game(
+    id: int = 1,
+    players: list[models.Player] | None = None,
+    state: enums.GameState = enums.GameState.PLAYERS_WAITING,
+    fields: list[models.Field] | None = None,
+) -> models.Game:
+    if players is None:
+        players = []
+    if fields is None:
+        fields = []
+    return models.Game(
+        id=id,
+        players=players,
+        state=state,
+        fields=fields,
     )
 
 
-def generate_game() -> Game:
-    return Game(1)
+def add_game_players(game: models.Game, players: list[models.Player]) -> None:
+    for player in players:
+        game.add_player(player)
+    game.clear_events()
 
 
-@pytest.fixture
-def game() -> Game:
-    return generate_game()
-
-
-class TestGame(TestCase):
-    def test_add_player_player_added(self, game: Game) -> None:
-        [player] = generate_players(1)
+class TestGame:
+    def test_add_player_player_added(self) -> None:
+        game = get_game()
+        player, *_ = get_players(1)
 
         game.add_player(player)
 
-        assert [player] == list(game._players)
+        assert len(game._players) == 1
+        assert player in game._players
+
+    def test_add_player_player_added_event_registered(self) -> None:
+        game = get_game()
+        player, *_ = get_players(1)
+
+        game.add_player(player)
+
+        registered_events = game.collect_events()
+        expected_event = events.PlayerAdded(
+            game_id=game.id,
+            player_id=player.id,
+            username=player.username,
+        )
+        assert expected_event in registered_events
+
+    def test_add_player_game_all_players_connected_event_registered(self) -> None:
+        game = get_game()
+        player, *rest = get_players(game_settings.players_count_to_start)
+        add_game_players(game, rest)
+
+        game.add_player(player)
+
+        registered_events = game.collect_events()
+        expected_event = events.GameClosed(game_id=game.id)
+        assert expected_event in registered_events
+
+    def test_add_player_game_invalid_state(self) -> None:
+        game = get_game(state=enums.GameState.START_WAITING)
+        player, *_ = get_players(1)
+
+        with pytest.raises(exceptions.GameInvalidState):
+            game.add_player(player)
+
+    def test_add_player_player_already_added(self) -> None:
+        game = get_game()
+        player, *_ = get_players(1)
+        game.add_player(player)
+
+        with pytest.raises(exceptions.PlayerAlreadyAdded):
+            game.add_player(player)
+
+    def test_add_player_game_closed_event_registered(self) -> None:
+        game = get_game()
+        player, *rest = get_players(game_settings.players_count_to_start)
+        add_game_players(game, rest)
+
+        game.add_player(player)
+
+        registered_events = game.collect_events()
+        expected_event = events.GameClosed(game_id=game.id)
+        assert expected_event in registered_events
+
+    def test_add_player_start_waiting_state_setted(self) -> None:
+        game = get_game()
+        player, *rest = get_players(game_settings.players_count_to_start)
+        add_game_players(game, rest)
+
+        game.add_player(player)
+
+        assert game.state == enums.GameState.START_WAITING
