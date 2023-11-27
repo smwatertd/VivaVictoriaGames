@@ -1,27 +1,30 @@
 from typing import Callable, Type
 
-from domain import commands, events
-from domain.models.player import Player
+from domain import commands, events, models
 
 from infrastructure.ports import UnitOfWork
 
 
-DUEL_TIMEOUT = 10
-
-
 async def connect_user(command: commands.AddUser, uow: UnitOfWork) -> None:
     async with uow:
-        player = await uow.players.create(Player(pk=command.user_pk, username=command.username))
-        game = await uow.games.get(pk=command.game_pk)
+        player = models.Player(command.user_pk, command.username)
+        game = await uow.games.get(command.game_pk)
         game.add_player(player)
         await uow.commit()
 
 
 async def disconnect_user(command: commands.RemoveUser, uow: UnitOfWork) -> None:
     async with uow:
-        player = await uow.players.get(pk=command.user_pk)
-        game = await uow.games.get(pk=command.game_pk)
+        player = await uow.players.get(command.user_pk)
+        game = await uow.games.get(command.game_pk)
         game.remove_player(player)
+        await uow.commit()
+
+
+async def start_game(command: commands.StartGame, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(command.game_id)
+        game.start()
         await uow.commit()
 
 
@@ -35,7 +38,11 @@ async def attack_field(command: commands.AttackField, uow: UnitOfWork) -> None:
 
 
 async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
-    pass
+    async with uow:
+        answer = await uow.answers.get(pk=command.answer_pk)
+        game = await uow.games.get(pk=command.game_pk)
+        game.verify_answer(answer)
+        await uow.commit()
 
 
 async def send_message_notification(event: events.GameEvent, uow: UnitOfWork) -> None:
@@ -45,17 +52,11 @@ async def send_message_notification(event: events.GameEvent, uow: UnitOfWork) ->
 COMMAND_HANDLERS = {
     commands.AddUser: connect_user,
     commands.RemoveUser: disconnect_user,
-    commands.AttackField: attack_field,
-    commands.SendAnswer: send_answer,
 }
 
-EVENT_HANDLERS: dict[Type[events.Event], tuple[Callable, ...]] = {
-    events.PlayerAdded: (send_message_notification,),
-    events.PlayerRemoved: (send_message_notification,),
-    events.GameStarted: (send_message_notification,),
-    events.PlayerTurnChanged: (send_message_notification,),
-    events.FieldAttacked: (send_message_notification,),
-    events.FieldCaptured: (send_message_notification,),
-    events.DuelStarted: (send_message_notification,),
-    events.QuestionSet: (send_message_notification,),
+EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
+    events.PlayerAdded: [send_message_notification],
+    events.PlayerRemoved: [send_message_notification],
+    events.GameClosed: [start_game],
+    events.GameStarted: [send_message_notification],
 }

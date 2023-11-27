@@ -128,3 +128,23 @@ class TestGame:
             username=player.username,
         )
         assert expected_event in registered_events
+
+    def test_start_game_started_state_setted(self) -> None:
+        game = get_game()
+        players = get_players(game_settings.players_count_to_start)
+        add_game_players(game, players)
+
+        game.start()
+
+        assert game.state == enums.GameState.STARTED
+
+    def test_start_game_started_event_registered(self) -> None:
+        game = get_game()
+        players = get_players(game_settings.players_count_to_start)
+        add_game_players(game, players)
+
+        game.start()
+
+        registered_events = game.collect_events()
+        expected_event = events.GameStarted(game_id=game.id)
+        assert expected_event in registered_events

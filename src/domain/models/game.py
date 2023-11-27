@@ -44,6 +44,10 @@ class Game(Model):
     def remove_player(self, player: Player) -> None:
         self._remove_player(player)
 
+    def start(self) -> None:
+        self._set_state(enums.GameState.STARTED)
+        self.register_event(events.GameStarted(game_id=self.id))
+
     def _ensure_can_add_player(self, player: Player) -> None:
         if self.state != enums.GameState.PLAYERS_WAITING:
             raise exceptions.GameInvalidState(self.state)

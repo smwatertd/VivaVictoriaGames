@@ -26,8 +26,8 @@ class PlayerAdded(Event):
     username: str
 
 
-class GameStarted(GameEvent):
-    pass
+class GameStarted(Event):
+    game_id: int
 
 
 class GameFull(Event):
