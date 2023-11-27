@@ -104,3 +104,27 @@ class TestGame:
         game.add_player(player)
 
         assert game.state == enums.GameState.START_WAITING
+
+    def test_remove_player_player_removed(self) -> None:
+        game = get_game()
+        player, *_ = get_players(1)
+        game.add_player(player)
+
+        game.remove_player(player)
+
+        assert len(game._players) == 0
+
+    def test_remove_player_player_removed_event_registered(self) -> None:
+        game = get_game()
+        player, *_ = get_players(1)
+        game.add_player(player)
+
+        game.remove_player(player)
+
+        registered_events = game.collect_events()
+        expected_event = events.PlayerRemoved(
+            game_id=game.id,
+            player_id=player.id,
+            username=player.username,
+        )
+        assert expected_event in registered_events

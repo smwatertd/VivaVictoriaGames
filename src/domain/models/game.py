@@ -41,6 +41,9 @@ class Game(Model):
         self._add_player(player)
         self._try_close()
 
+    def remove_player(self, player: Player) -> None:
+        self._remove_player(player)
+
     def _ensure_can_add_player(self, player: Player) -> None:
         if self.state != enums.GameState.PLAYERS_WAITING:
             raise exceptions.GameInvalidState(self.state)
@@ -61,6 +64,16 @@ class Game(Model):
         if self._is_full():
             self.register_event(events.GameClosed(game_id=self.id))
             self._set_state(enums.GameState.START_WAITING)
+
+    def _remove_player(self, player: Player) -> None:
+        self._players.remove(player)
+        self.register_event(
+            events.PlayerRemoved(
+                game_id=self.id,
+                player_id=player.id,
+                username=player.username,
+            ),
+        )
 
     def _is_full(self) -> bool:
         return len(self._players) == game_settings.players_count_to_start

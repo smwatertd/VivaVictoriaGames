@@ -47,8 +47,9 @@ class PlayerTurnChanged(GameEvent):
     player_pk: int
 
 
-class PlayerRemoved(GameEvent):
-    player_pk: int
+class PlayerRemoved(Event):
+    game_id: int
+    player_id: int
 
 
 class FieldAttacked(FieldEvent):
