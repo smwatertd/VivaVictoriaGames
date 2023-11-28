@@ -57,8 +57,17 @@ class FieldAttacked(FieldEvent):
     attacker_pk: int
 
 
-class FieldCaptured(FieldEvent):
-    capturer_pk: int
+class FieldCaptured(Event):
+    game_id: int
+    field_id: int
+    capturer_id: int
+
+
+class PlayerFieldAttacked(Event):
+    game_id: int
+    attacker_id: int
+    defender_id: int
+    field_id: int
 
 
 class DuelStarted(GameEvent):

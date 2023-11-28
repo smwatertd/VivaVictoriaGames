@@ -6,3 +6,4 @@ class GameState(str, Enum):
     START_WAITING = 'start_waiting'
     STARTED = 'started'
     ATTACK_WAITING = 'attack_waiting'
+    DUEL_WAITING = 'duel_waiting'

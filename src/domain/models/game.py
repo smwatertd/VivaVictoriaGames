@@ -54,6 +54,10 @@ class Game(Model):
         self._select_player_turn(player_turn_selector)
         self._set_state(enums.GameState.ATTACK_WAITING)
 
+    def attack_field(self, player: Player, field: Field, player_turn_selector: PlayerTurnSelector) -> None:
+        self._ensure_can_attack_field(player, field, player_turn_selector)
+        self._attack_field(player, field)
+
     def _ensure_can_add_player(self, player: Player) -> None:
         if self.state != enums.GameState.PLAYERS_WAITING:
             raise exceptions.GameInvalidState(self.state)
@@ -94,9 +98,44 @@ class Game(Model):
             ),
         )
 
+    def _ensure_can_attack_field(self, player: Player, field: Field, player_turn_selector: PlayerTurnSelector) -> None:
+        if self.state != enums.GameState.ATTACK_WAITING:
+            raise exceptions.GameInvalidState(self.state)
+        if field.get_owner() == player:
+            raise exceptions.AlreadyOwned()
+        if player_turn_selector.select(self.round_number, self._players) != player:
+            raise exceptions.NotYourTurn()
+
+    def _attack_field(self, player: Player, field: Field) -> None:
+        if field.get_owner() is None:
+            self._capture_field(player, field)
+        else:
+            self._start_duel(player, field)
+
     def _is_full(self) -> bool:
         return len(self._players) == game_settings.players_count_to_start
 
     def _set_state(self, state: enums.GameState) -> None:
         self.state = state
         self.register_event(events.GameStateChanged(game_id=self.id, state=state))
+
+    def _capture_field(self, capturer: Player, field: Field) -> None:
+        field.set_owner(capturer)
+        self.register_event(
+            events.FieldCaptured(
+                game_id=self.id,
+                field_id=field.id,
+                capturer_id=capturer.id,
+            ),
+        )
+
+    def _start_duel(self, player: Player, field: Field) -> None:
+        self._set_state(enums.GameState.DUEL_WAITING)
+        self.register_event(
+            events.PlayerFieldAttacked(
+                game_id=self.id,
+                attacker_id=player.id,
+                defender_id=field.get_owner().id,
+                field_id=field.id,
+            ),
+        )

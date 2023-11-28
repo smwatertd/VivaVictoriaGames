@@ -13,12 +13,12 @@ class Field(Model):
         self._owner = owner
 
     def __repr__(self) -> str:
-        return f'Field(id={self._id}, owner={self._owner})'
+        return f'Field(id={self.id}, owner={self._owner})'
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, Field):
             return False
-        return self._id == __value._id
+        return self.id == __value.id
 
     def is_captured(self) -> bool:
         return self._owner is not None
@@ -27,8 +27,7 @@ class Field(Model):
         if self._owner == capturer:
             raise exceptions.AlreadyOwned
 
-    def get_owner(self) -> Player:
-        assert self._owner
+    def get_owner(self) -> Player | None:
         return self._owner
 
     def set_owner(self, new_owner: Player) -> None:
