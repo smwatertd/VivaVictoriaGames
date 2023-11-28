@@ -17,10 +17,6 @@ class RemoveUser(Command):
     username: str
 
 
-class StartGame(Command):
-    game_id: int
-
-
 class AttackField(Command):
     game_pk: int
     attacker_pk: int

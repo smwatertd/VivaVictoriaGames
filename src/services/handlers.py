@@ -21,9 +21,9 @@ async def disconnect_user(command: commands.RemoveUser, uow: UnitOfWork) -> None
         await uow.commit()
 
 
-async def start_game(command: commands.StartGame, uow: UnitOfWork) -> None:
+async def start_game(event: events.GameStarted, uow: UnitOfWork) -> None:
     async with uow:
-        game = await uow.games.get(command.game_id)
+        game = await uow.games.get(event.game_id)
         game.start()
         await uow.commit()
 
