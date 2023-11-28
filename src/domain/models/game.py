@@ -45,6 +45,7 @@ class Game(Model):
         self._remove_player(player)
 
     def start(self) -> None:
+        self.round_number = 1
         self._set_state(enums.GameState.STARTED)
         self.register_event(events.GameStarted(game_id=self.id))
 
