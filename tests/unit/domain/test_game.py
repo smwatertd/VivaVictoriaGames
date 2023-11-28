@@ -182,7 +182,7 @@ class TestGame:
             player_id=player_turn.id,
         )
         assert expected_event in registered_events
-        assert selector.is_called == 1
+        assert selector.is_called
 
     def test_select_player_turn_attack_waiting_state_setted(self) -> None:
         game = get_game()
