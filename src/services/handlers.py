@@ -1,6 +1,7 @@
 from typing import Callable, Type
 
 from domain import commands, events, models
+from domain.models.strategies import IdentityPlayerTurnSelector
 
 from infrastructure.ports import UnitOfWork
 
@@ -25,6 +26,13 @@ async def start_game(event: events.GameStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
         game.start()
+        await uow.commit()
+
+
+async def select_player_turn(event: events.GameStarted, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.select_player_turn(IdentityPlayerTurnSelector())
         await uow.commit()
 
 
@@ -58,5 +66,6 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
     events.PlayerAdded: [send_message_notification],
     events.PlayerRemoved: [send_message_notification],
     events.GameClosed: [start_game],
-    events.GameStarted: [send_message_notification],
+    events.GameStarted: [select_player_turn, send_message_notification],
+    events.PlayerTurnChanged: [send_message_notification],
 }

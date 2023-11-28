@@ -43,8 +43,9 @@ class GameClosed(Event):
     game_id: int
 
 
-class PlayerTurnChanged(GameEvent):
-    player_pk: int
+class PlayerTurnChanged(Event):
+    game_id: int
+    player_id: int
 
 
 class PlayerRemoved(Event):

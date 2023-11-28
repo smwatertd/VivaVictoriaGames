@@ -4,6 +4,7 @@ from domain import enums, events, exceptions
 from domain.models.field import Field
 from domain.models.model import Model
 from domain.models.player import Player
+from domain.models.strategies import PlayerTurnSelector
 
 from questions import Question
 
@@ -49,6 +50,10 @@ class Game(Model):
         self._set_state(enums.GameState.STARTED)
         self.register_event(events.GameStarted(game_id=self.id))
 
+    def select_player_turn(self, player_turn_selector: PlayerTurnSelector) -> None:
+        self._select_player_turn(player_turn_selector)
+        self._set_state(enums.GameState.ATTACK_WAITING)
+
     def _ensure_can_add_player(self, player: Player) -> None:
         if self.state != enums.GameState.PLAYERS_WAITING:
             raise exceptions.GameInvalidState(self.state)
@@ -77,6 +82,15 @@ class Game(Model):
                 game_id=self.id,
                 player_id=player.id,
                 username=player.username,
+            ),
+        )
+
+    def _select_player_turn(self, player_turn_selector: PlayerTurnSelector) -> None:
+        player_turn = player_turn_selector.select(self.round_number, self._players)
+        self.register_event(
+            events.PlayerTurnChanged(
+                game_id=self.id,
+                player_id=player_turn.id,
             ),
         )
 

@@ -1,6 +1,7 @@
 from core.settings import game_settings
 
 from domain import enums, events, exceptions, models
+from domain.models.strategies import PlayerTurnSelector
 
 import pytest
 
@@ -33,6 +34,15 @@ def add_game_players(game: models.Game, players: list[models.Player]) -> None:
     for player in players:
         game.add_player(player)
     game.clear_events()
+
+
+class FakePlayerTurnSelector(PlayerTurnSelector):
+    def __init__(self) -> None:
+        self.is_called = False
+
+    def select(self, round_number: int, players: list[models.Player]) -> models.Player:
+        self.is_called = True
+        return players[0]
 
 
 class TestGame:
@@ -157,3 +167,29 @@ class TestGame:
         game.start()
 
         assert game.round_number == 1
+
+    def test_select_player_turn_player_turn_changed_event_registered(self) -> None:
+        game = get_game()
+        player_turn, *rest = get_players(game_settings.players_count_to_start)
+        add_game_players(game, [player_turn, *rest])
+        selector = FakePlayerTurnSelector()
+
+        game.select_player_turn(selector)
+
+        registered_events = game.collect_events()
+        expected_event = events.PlayerTurnChanged(
+            game_id=game.id,
+            player_id=player_turn.id,
+        )
+        assert expected_event in registered_events
+        assert selector.is_called == 1
+
+    def test_select_player_turn_attack_waiting_state_setted(self) -> None:
+        game = get_game()
+        player_turn, *rest = get_players(game_settings.players_count_to_start)
+        add_game_players(game, [player_turn, *rest])
+        selector = FakePlayerTurnSelector()
+
+        game.select_player_turn(selector)
+
+        assert game.state == enums.GameState.ATTACK_WAITING
