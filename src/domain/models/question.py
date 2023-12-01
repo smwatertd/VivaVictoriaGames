@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from questions import Answer
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Question:
-    _id: int
-    _answers: list[Answer]
+    id: int
+    answers: list[Answer]
