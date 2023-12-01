@@ -30,25 +30,28 @@ async def start_game(event: events.GameStarted, uow: UnitOfWork) -> None:
 
 
 async def select_player_turn(event: events.GameStarted, uow: UnitOfWork) -> None:
+    # TODO: Maybe a better way
     async with uow:
         game = await uow.games.get(event.game_id)
         game.select_player_turn(IdentityPlayerTurnSelector())
         await uow.commit()
 
 
-async def select_question(event: events.PlayerFieldAttacked, uow: UnitOfWork) -> None:
+async def attack_field(command: commands.AttackField, uow: UnitOfWork) -> None:
     async with uow:
-        game = await uow.games.get(event.game_id)
-        game.select_question()
+        field = await uow.fields.get(command.field_pk)
+        attacker = await uow.players.get(command.attacker_pk)
+        game = await uow.games.get(command.game_pk)
+        game.attack_field(attacker, field)
         await uow.commit()
 
 
-async def attack_field(command: commands.AttackField, uow: UnitOfWork) -> None:
-    async with uow:
-        field = await uow.fields.get(pk=command.field_pk)
-        attacker = await uow.players.get(pk=command.attacker_pk)
-        game = await uow.games.get(pk=command.game_pk)
-        game.attack_field(attacker, field)
+async def start_duel(event: events.PlayerFieldAttacked, uow: UnitOfWork) -> None:
+    with uow:
+        game = await uow.games.get(event.game_id)
+        attacker, defender = await uow.players.get(event.attacker_id), await uow.players.get(event.defender_id)
+        field = await uow.fields.get(event.field_id)
+        game.start_duel(attacker, defender, field)
         await uow.commit()
 
 
@@ -75,6 +78,6 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
     events.GameClosed: [start_game],
     events.GameStarted: [select_player_turn, send_message_notification],
     events.PlayerTurnChanged: [send_message_notification],
-    events.FieldCaptured: [send_message_notification],
-    events.PlayerFieldAttacked: [select_question, send_message_notification],
+    events.FieldCaptured: [send_message_notification],  # TODO: stop round, select next player
+    events.PlayerFieldAttacked: [start_duel, send_message_notification],
 }

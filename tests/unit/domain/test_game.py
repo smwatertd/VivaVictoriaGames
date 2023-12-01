@@ -305,3 +305,40 @@ class TestGame:
 
         with pytest.raises(exceptions.NotYourTurn):
             game.attack_field(player, field, selector)
+
+    def test_start_duel_dueling_state_setted(self) -> None:
+        field, *rest_fields = get_fields(game_settings.fields_count)
+        player, field_owner, *rest_players = get_players(
+            game_settings.players_count_to_start,
+        )
+        field.set_owner(field_owner)
+        game = get_game(fields=rest_fields)
+        add_game_players(game, [player, field_owner, *rest_players])
+        selector = FakePlayerTurnSelector()
+        game.select_player_turn(selector)
+
+        game.start_duel(player, field, selector)
+
+        assert enums.GameState.DUELING == game.state
+
+    def test_start_duel_duel_started_event_registered(self) -> None:
+        field, *rest_fields = get_fields(game_settings.fields_count)
+        player, field_owner, *rest_players = get_players(
+            game_settings.players_count_to_start,
+        )
+        field.set_owner(field_owner)
+        game = get_game(fields=rest_fields)
+        add_game_players(game, [player, field_owner, *rest_players])
+        selector = FakePlayerTurnSelector()
+        game.select_player_turn(selector)
+
+        game.start_duel(player, field_owner, selector)
+
+        registered_events = game.collect_events()
+        expected_event = events.DuelStarted(
+            game_id=game.id,
+            attacker_id=player.id,
+            defender_id=field_owner.id,
+            field_id=field.id,
+        )
+        assert expected_event in registered_events

@@ -70,9 +70,10 @@ class PlayerFieldAttacked(Event):
     field_id: int
 
 
-class DuelStarted(GameEvent):
-    attacker_pk: int
-    defender_pk: int
+class DuelStarted(Event):
+    game_id: int
+    attacker_id: int
+    defender_id: int
 
 
 class QuestionSet(GameEvent):

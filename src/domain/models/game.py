@@ -58,6 +58,16 @@ class Game(Model):
         self._ensure_can_attack_field(player, field, player_turn_selector)
         self._attack_field(player, field)
 
+    def start_duel(self, attacker: Player, defender: Player, field: Field) -> None:
+        self._set_state(enums.GameState.DUELING)
+        self.register_event(
+            events.DuelStarted(
+                game_id=self.id,
+                attacker_id=attacker.id,
+                defender_id=defender.id,
+            ),
+        )
+
     def _ensure_can_add_player(self, player: Player) -> None:
         if self.state != enums.GameState.PLAYERS_WAITING:
             raise exceptions.GameInvalidState(self.state)
