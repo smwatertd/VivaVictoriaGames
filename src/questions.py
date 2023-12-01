@@ -1,16 +1,21 @@
 import random
-from dataclasses import dataclass
+
+from domain.models import Answer, Question
 
 
-@dataclass
-class Question:
-    text: str
-
-
-QUESTIONS = tuple(
-    Question(text=f'Question {i}?')
-    for i in range(100)
-)
+QUESTIONS = [
+    Question(
+        id=i,
+        answers=[
+            Answer(
+                id=i * 5 + j,
+                is_correct=j == 0,
+            )
+            for j in range(1, 5)
+        ],
+    )
+    for i in range(1, 10)
+]
 
 
 def get_random_question() -> Question:

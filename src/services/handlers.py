@@ -5,6 +5,8 @@ from domain.models.strategies import IdentityPlayerTurnSelector
 
 from infrastructure.ports import UnitOfWork
 
+from questions import get_random_question
+
 
 async def connect_user(command: commands.AddUser, uow: UnitOfWork) -> None:
     async with uow:
@@ -55,6 +57,14 @@ async def start_duel(event: events.PlayerFieldAttacked, uow: UnitOfWork) -> None
         await uow.commit()
 
 
+async def select_question(event: events.DuelStarted, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        question = get_random_question()
+        game.set_question(question)
+        await uow.commit()
+
+
 async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
     async with uow:
         answer = await uow.answers.get(pk=command.answer_pk)
@@ -80,4 +90,5 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
     events.PlayerTurnChanged: [send_message_notification],
     events.FieldCaptured: [send_message_notification],  # TODO: stop round, select next player
     events.PlayerFieldAttacked: [start_duel, send_message_notification],
+    events.DuelStarted: [select_question, send_message_notification],
 }

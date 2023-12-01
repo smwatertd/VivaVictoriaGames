@@ -76,9 +76,9 @@ class DuelStarted(Event):
     defender_id: int
 
 
-class QuestionSet(GameEvent):
-    question_pk: int
-    answers: list[tuple[int, str]]
+class QuestionSetted(Event):
+    game_id: int
+    question_id: int
 
 
 class AllPlayersConnected(Event):

@@ -4,9 +4,8 @@ from domain import enums, events, exceptions
 from domain.models.field import Field
 from domain.models.model import Model
 from domain.models.player import Player
+from domain.models.question import Question
 from domain.models.strategies import PlayerTurnSelector
-
-from questions import Question
 
 
 class Game(Model):
@@ -68,6 +67,9 @@ class Game(Model):
             ),
         )
 
+    def set_question(self, question: Question) -> None:
+        self._set_question(question)
+
     def _ensure_can_add_player(self, player: Player) -> None:
         if self.state != enums.GameState.PLAYERS_WAITING:
             raise exceptions.GameInvalidState(self.state)
@@ -121,6 +123,15 @@ class Game(Model):
             self._capture_field(player, field)
         else:
             self._start_duel(player, field)
+
+    def _set_question(self, question: Question) -> None:
+        self._question = question
+        self.register_event(
+            events.QuestionSetted(
+                game_id=self.id,
+                question_id=question.id,
+            ),
+        )
 
     def _is_full(self) -> bool:
         return len(self._players) == game_settings.players_count_to_start

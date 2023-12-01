@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from questions import Answer
+from domain.models.answer import Answer
 
 
 @dataclass(frozen=True, slots=True)

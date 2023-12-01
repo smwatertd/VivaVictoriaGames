@@ -47,6 +47,10 @@ def get_fields(fieds_count: int) -> list[models.Field]:
     return [models.Field(id=i) for i in range(1, fieds_count + 1)]
 
 
+def get_question() -> models.Question:
+    return models.Question(id=1, answers=[])
+
+
 class TestGame:
     def test_add_player_player_added(self) -> None:
         game = get_game()
@@ -340,5 +344,26 @@ class TestGame:
             attacker_id=player.id,
             defender_id=field_owner.id,
             field_id=field.id,
+        )
+        assert expected_event in registered_events
+
+    def test_set_question_question_setted(self) -> None:
+        question = get_question()
+        game = get_game()
+
+        game.set_question(question)
+
+        assert question == game._question
+
+    def test_set_question_question_setted_event_registered(self) -> None:
+        question = get_question()
+        game = get_game()
+
+        game.set_question(question)
+
+        registered_events = game.collect_events()
+        expected_event = events.QuestionSetted(
+            game_id=game.id,
+            question_id=question.id,
         )
         assert expected_event in registered_events
