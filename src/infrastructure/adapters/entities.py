@@ -1,4 +1,7 @@
+from typing import Any
+
 from domain import enums, models
+from domain.events import Event
 
 from sqlalchemy import (
     Boolean,
@@ -9,6 +12,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    event,
 )
 from sqlalchemy.orm import registry, relationship
 
@@ -35,7 +39,7 @@ players = Table(
     metadata,
     Column('id', Integer, primary_key=True),
     Column('username', String, unique=True),
-    Column('game_id', Integer, ForeignKey('games.id')),
+    Column('game_id', Integer, ForeignKey('games.id'), nullable=True),
 )
 
 fields = Table(
@@ -133,3 +137,8 @@ def start_mappers() -> None:
             ),
         },
     )
+
+
+@event.listens_for(models.Game, 'load')
+def on_game_load(game: models.Game, _: Any) -> None:
+    game._events: list[Event] = []  # type: ignore
