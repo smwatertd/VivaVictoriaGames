@@ -1,6 +1,7 @@
+import logging
 from typing import Callable, Type
 
-from domain import commands, events, models
+from domain import commands, events
 from domain.models.strategies import IdentityPlayerTurnSelector
 
 from infrastructure.ports import UnitOfWork
@@ -8,9 +9,13 @@ from infrastructure.ports import UnitOfWork
 from questions import get_random_question
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 async def connect_user(command: commands.AddUser, uow: UnitOfWork) -> None:
     async with uow:
-        player = models.Player(command.user_pk, command.username)
+        player = await uow.players.get_or_create(command.user_pk, command.username)
         game = await uow.games.get(command.game_pk)
         game.add_player(player)
         await uow.commit()
