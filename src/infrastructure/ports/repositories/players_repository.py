@@ -11,9 +11,13 @@ class PlayersRepository(Repository, ABC):
         self.seen: set[Player]
 
     @abstractmethod
-    async def get(self, pk: int) -> Player:
+    async def add(self, player: Player) -> None:
         pass
 
     @abstractmethod
-    async def create(self, player: Player) -> Player:
+    async def get(self, id: int) -> Player:
+        pass
+
+    @abstractmethod
+    async def get_or_create(self, id: int, username: str) -> Player:
         pass
