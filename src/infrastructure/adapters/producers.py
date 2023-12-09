@@ -2,34 +2,61 @@ import json
 
 import aioredis
 
+from infrastructure.adapters.messages import Message
 from infrastructure.ports.producers import Producer
 
 import pika
 
 
 class RedisProducer(Producer):
-    def __init__(self) -> None:
-        self.redis = aioredis.Redis(host='localhost', port=6379, db=0, encoding='utf-8')
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        db: int,
+        encoding: str,
+    ) -> None:
+        self._redis = aioredis.Redis(
+            host=host,
+            port=port,
+            db=db,
+            encoding=encoding,
+        )
 
-    async def publish(self, group: str, data: dict[str, str]) -> None:
-        await self.redis.publish(group, json.dumps(data))
+    async def publish(self, group: str, message: Message) -> None:
+        await self._redis.publish(
+            group,
+            json.dumps(
+                {
+                    'type': message.type.value,
+                    'payload_type': message.payload_type,
+                    'payload': message.payload,
+                },
+            ),
+        )
 
 
 class RabbitMQProducer(Producer):
-    connection_params = pika.ConnectionParameters(host='localhost', port=5672, virtual_host='/')
+    def __init__(self, host: str, port: int, virtual_host: str, exchange: str) -> None:
+        self._exchange = exchange
+        self._connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=host,
+                port=port,
+                virtual_host=virtual_host,
+            ),
+        )
+        self._channel = self._connection.channel()
 
-    def __init__(self) -> None:
-        self.connection = pika.BlockingConnection(self.connection_params)
-        self.channel = self.connection.channel()
-
-    async def publish(self, group: str, data: dict[str, str]) -> None:
-        props = pika.BasicProperties(headers={
-            'message_type': 'event',
-            'payload_type': data['event_type'],
-        })
-        self.channel.basic_publish(
-            exchange='games',
-            routing_key='games.events.all',
-            body=json.dumps(data),
-            properties=props,
+    async def publish(self, group: str, message: Message) -> None:
+        self._channel.basic_publish(
+            exchange=self._exchange,
+            routing_key=group,
+            body=json.dumps(message.payload),
+            properties=pika.BasicProperties(
+                headers={
+                    'type': message.type.value,
+                    'payload_type': message.payload_type,
+                },
+            ),
         )
