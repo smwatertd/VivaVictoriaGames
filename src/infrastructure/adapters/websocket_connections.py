@@ -1,5 +1,3 @@
-import json
-
 from infrastructure.ports import WebSocketConnection
 
 from starlette.websockets import WebSocket
@@ -10,5 +8,5 @@ class StarletteWebSocketConnection(WebSocketConnection):
         super().__init__(websocket)
         self.websocket: WebSocket
 
-    async def send_bytes(self, data: bytes) -> None:
-        await self.websocket.send_json(json.loads(data))
+    async def send(self, data: dict) -> None:
+        await self.websocket.send_json(data)
