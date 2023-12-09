@@ -16,10 +16,24 @@ class RedisSettings(BaseSettings):
     host: str = 'localhost'
     port: int = 6379
     db: int = 0
+    default_encoding: str = 'utf-8'
+    pool_max_connections: int = 1
 
     model_config = SettingsConfigDict(
         env_file='.env',
         env_prefix='REDIS_',
+    )
+
+
+class RabbitMQSettings(BaseSettings):
+    host: str = 'localhost'
+    port: int = 5672
+    virtual_host: str = '/'
+    exchange: str = 'games'
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_prefix='RABBITMQ_',
     )
 
 
@@ -56,5 +70,6 @@ class GameSettings(BaseSettings):
 
 app_settings = AppSettings()
 redis_settings = RedisSettings()
+rabbitmq_settings = RabbitMQSettings()
 db_settings = DatabaseSettings()
 game_settings = GameSettings()
