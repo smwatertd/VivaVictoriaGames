@@ -2,9 +2,9 @@ from typing import Any
 
 from core.settings import db_settings
 
+from infrastructure import ports
 from infrastructure.adapters import repositories
-from infrastructure.ports.producers import Producer
-from infrastructure.ports.unit_of_work import UnitOfWork
+from infrastructure.adapters.message_serializer import MessageSerializer
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -16,15 +16,16 @@ SQLALCHEMY_DEFAULT_SESSION_FACTORY = async_sessionmaker(
 )
 
 
-class SQLAlchemyUnitOfWork(UnitOfWork):
+class SQLAlchemyUnitOfWork(ports.UnitOfWork):
     def __init__(
         self,
-        event_producer: Producer,
-        session_factory: async_sessionmaker[
-            AsyncSession
-        ] = SQLALCHEMY_DEFAULT_SESSION_FACTORY,
+        event_producer: ports.Producer,
+        serializer: MessageSerializer,
+        chat_message_producer: ports.Producer,
+        session_factory: async_sessionmaker[AsyncSession] = SQLALCHEMY_DEFAULT_SESSION_FACTORY,
     ) -> None:
-        super().__init__(event_producer)
+        super().__init__(event_producer, serializer)
+        self.chat_message_producer = chat_message_producer
         self._session_factory = session_factory
 
     async def __aenter__(self) -> 'SQLAlchemyUnitOfWork':
