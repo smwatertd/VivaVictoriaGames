@@ -1,17 +1,12 @@
 from abc import ABC, abstractmethod
 
-from infrastructure.ports.consumers import Consumer
 from infrastructure.ports.websocket_connections import WebSocketConnection
 
 
 class AbstractChannel(ABC):
-    def __init__(
-        self,
-        websocket: WebSocketConnection,
-        message_consumer: Consumer,
-    ) -> None:
+    def __init__(self, id: str, websocket: WebSocketConnection) -> None:
+        self._id = id
         self._websocket = websocket
-        self._message_consumer = message_consumer
 
     @abstractmethod
     async def wait_for_message(self) -> None:
@@ -24,3 +19,11 @@ class AbstractChannel(ABC):
     @abstractmethod
     async def unsubscribe(self, group: str) -> None:
         pass
+
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, AbstractChannel):
+            return False
+        return self._id == __value._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
