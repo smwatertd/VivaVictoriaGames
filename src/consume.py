@@ -4,7 +4,11 @@ from core.container import container
 
 
 async def main() -> None:
-    await container.message_dispatcher().start(container.unit_of_work())
+    serializer = container.message_serializer()
+    consumer = container.message_consumer()
+    async for message in consumer.listen('game.events'):
+        await container.messagebus().handle(serializer.deserialize(message), container.unit_of_work())
+        await consumer.commit()
 
 
 if __name__ == '__main__':
