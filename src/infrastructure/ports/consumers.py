@@ -1,10 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator
+from typing import AsyncIterator
 
-from infrastructure.ports.messages import Message
+from infrastructure.adapters.messages import Message
 
 
-class Consumer(ABC):
+class MessageConsumer(ABC):
+    @abstractmethod
+    async def listen(self, group: str) -> AsyncIterator[Message]:
+        pass
+
+    @abstractmethod
+    async def commit(self) -> None:
+        pass
+
+
+class ChatMessageConsumer(ABC):
     @abstractmethod
     async def subscribe(self, group: str) -> None:
         pass
@@ -14,5 +24,5 @@ class Consumer(ABC):
         pass
 
     @abstractmethod
-    async def listen(self) -> AsyncGenerator[Message, None]:
+    async def listen(self) -> AsyncIterator[Message]:
         pass

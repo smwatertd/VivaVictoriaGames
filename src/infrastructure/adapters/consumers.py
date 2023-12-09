@@ -1,45 +1,71 @@
-from typing import AsyncGenerator
+import json
+from typing import AsyncIterator
 
 import aioredis
 
-from infrastructure.adapters import messages
-from infrastructure.ports import Consumer
+from infrastructure.adapters.message_types import MessageType
+from infrastructure.adapters.messages import Message
+from infrastructure.ports import ChatMessageConsumer, MessageConsumer
 
 import pika
 
 
-class RedisConsumer(Consumer):
-    def __init__(self) -> None:
-        self.redis = aioredis.Redis(host='localhost', port=6379, db=0, encoding='utf-8')
-        self.pubsub = self.redis.pubsub(ignore_subscribe_messages=True)
+class RedisChatMessageConsumer(ChatMessageConsumer):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        db: int,
+        encoding: str,
+        ignore_subscribe_messages: bool,
+    ) -> None:
+        self._redis = aioredis.Redis(host=host, port=port, db=db, encoding=encoding)
+        self._pubsub = self._redis.pubsub(ignore_subscribe_messages=ignore_subscribe_messages)
 
     async def subscribe(self, group: str) -> None:
-        await self.pubsub.subscribe(group)
+        await self._pubsub.subscribe(group)
 
     async def unsubscribe(self, group: str) -> None:
-        await self.pubsub.unsubscribe(group)
-        await self.redis.close()
+        await self._pubsub.unsubscribe(group)
 
-    async def listen(self) -> AsyncGenerator[messages.RedisMessage, None]:
-        async for message in self.pubsub.listen():
-            yield messages.RedisMessage(message)
+    async def listen(self) -> AsyncIterator[Message]:
+        # TODO: fix. When exception raises nothing does because async task. Can add add_done_callback. Change ensure
+        # future to create task
+        async for message in self._pubsub.listen():
+            decoded_data = json.loads(message['data'])
+            yield Message(
+                type=MessageType(decoded_data['type']),
+                payload_type=decoded_data['payload_type'],
+                payload=decoded_data['payload'],
+            )
 
 
-class RabbitMQConsumer(Consumer):
-    connection_params = pika.ConnectionParameters(host='localhost', port=5672, virtual_host='/')
+class RabbitMQMessageConsumer(MessageConsumer):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        virtual_host: str,
+    ) -> None:
+        self._connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=host,
+                port=port,
+                virtual_host=virtual_host,
+            ),
+        )
+        self._channel = self._connection.channel()
+        self._delivery_tag = None
 
-    def __init__(self) -> None:
-        self.connection = pika.BlockingConnection(self.connection_params)
-        self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange='games', exchange_type='topic', durable=True)
+    async def listen(self, group: str) -> AsyncIterator[Message]:
+        for deliver, properties, body in self._channel.consume(queue=group, auto_ack=False):
+            self._delivery_tag = deliver.delivery_tag
+            yield Message(
+                type=MessageType(properties.headers.get('type', 'unknown')),
+                payload_type=properties.headers['payload_type'],
+                payload=json.loads(body),
+            )
 
-    async def subscribe(self, group: str) -> None:
-        self.channel.queue_declare(queue=group)
-        self.channel.queue_bind(queue=group, exchange='games')
-
-    async def unsubscribe(self, group: str) -> None:
-        self.channel.queue_unbind(queue=group, exchange='games')
-
-    async def listen(self) -> AsyncGenerator[messages.RabbitMQMessage, None]:
-        for message in self.channel.consume(queue='game.events', auto_ack=True):
-            yield messages.RabbitMQMessage(*message)
+    async def commit(self) -> None:
+        if self._delivery_tag is not None:
+            self._channel.basic_ack(delivery_tag=self._delivery_tag)
