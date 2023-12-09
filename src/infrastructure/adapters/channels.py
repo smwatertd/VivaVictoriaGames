@@ -1,30 +1,35 @@
 import asyncio
-import json
 
-from infrastructure.ports import AbstractChannel, WebSocketConnection
-from infrastructure.ports.consumers import Consumer
+from infrastructure import ports
 
 
-class Channel(AbstractChannel):
+class Channel(ports.AbstractChannel):
     def __init__(
         self,
-        websocket: WebSocketConnection,
-        message_consumer: Consumer,
+        id: str,
+        websocket: ports.WebSocketConnection,
+        chat_message_consumer: ports.ChatMessageConsumer,
     ) -> None:
-        super().__init__(websocket, message_consumer)
+        super().__init__(id, websocket)
+        self._chat_message_consumer = chat_message_consumer
         self._wait_for_message_task: asyncio.Task | None = None
 
     async def wait_for_message(self) -> None:
         self._wait_for_message_task = asyncio.ensure_future(self._wait_for_message())
 
     async def subscribe(self, group: str) -> None:
-        await self._message_consumer.subscribe(group)
+        await self._chat_message_consumer.subscribe(group)
 
     async def unsubscribe(self, group: str) -> None:
-        assert self._wait_for_message_task, 'wait_for_message must be called first'
+        if self._wait_for_message_task is None:
+            raise ValueError('Channel is not subscribed')
         self._wait_for_message_task.cancel()
-        await self._message_consumer.unsubscribe(group)
+        await self._chat_message_consumer.unsubscribe(group)
 
     async def _wait_for_message(self) -> None:
-        async for message in self._message_consumer.listen():
-            await self._websocket.send_bytes(json.dumps(message.get_payload()))
+        async for message in self._chat_message_consumer.listen():
+            await self._websocket.send({
+                'type': message.type.value,
+                'payload_type': message.payload_type,
+                'payload': message.payload,
+            })
