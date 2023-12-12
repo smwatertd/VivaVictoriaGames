@@ -4,8 +4,7 @@ from typing import Any, Generator
 from domain.events import Event
 
 from infrastructure.adapters.message_serializer import MessageSerializer
-from infrastructure.ports import repositories
-from infrastructure.ports.producers import Producer
+from infrastructure.ports import Producer, repositories
 
 
 class UnitOfWork(ABC):
@@ -13,9 +12,15 @@ class UnitOfWork(ABC):
     players: repositories.PlayersRepository
     fields: repositories.FieldsRepository
 
-    def __init__(self, event_producer: Producer, serializer: MessageSerializer) -> None:
+    def __init__(
+        self,
+        event_producer: Producer,
+        serializer: MessageSerializer,
+        chat_message_producer: Producer,
+    ) -> None:
         self._event_producer = event_producer
         self.serializer = serializer
+        self.chat_message_producer = chat_message_producer
 
     async def __aenter__(self) -> 'UnitOfWork':
         return self
