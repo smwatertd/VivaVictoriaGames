@@ -28,9 +28,13 @@ def upgrade() -> None:
             'state',
             sa.Enum(
                 'PLAYERS_WAITING',
+                'IS_FULL',
                 'STARTED',
+                'IN_PROCESS',
                 'ATTACK_WAITING',
                 'DUELING',
+                'ANSWERS_WAITING',
+                'ENDED',
                 name='gamestate',
             ),
             nullable=False,
