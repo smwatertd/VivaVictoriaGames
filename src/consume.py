@@ -2,6 +2,8 @@ import asyncio
 
 from core.container import container
 
+from main import app  # noqa
+
 
 async def main() -> None:
     serializer = container.message_serializer()
