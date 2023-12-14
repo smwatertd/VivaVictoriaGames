@@ -5,25 +5,21 @@ class Event(BaseModel):
     pass
 
 
-class GameEvent(Event):
+class FieldEvent(Event):
     game_pk: int
-
-
-class FieldEvent(GameEvent):
     field_pk: int
 
 
 class PlayerAdded(Event):
     game_id: int
     player_id: int
-    username: str
 
 
 class GameStarted(Event):
     game_id: int
 
 
-class GameFull(Event):
+class GameIsFull(Event):
     game_id: int
 
 
@@ -67,6 +63,7 @@ class DuelStarted(Event):
     game_id: int
     attacker_id: int
     defender_id: int
+    field_id: int
 
 
 class QuestionSetted(Event):
@@ -76,3 +73,54 @@ class QuestionSetted(Event):
 
 class AllPlayersConnected(Event):
     game_id: int
+
+
+class RoundStarted(Event):
+    game_id: int
+    round_number: int
+    player_order_id: int
+
+
+class RoundFinished(Event):
+    game_id: int
+    round_number: int
+
+
+class GameEnded(Event):
+    game_id: int
+
+
+class DuelRoundStarted(Event):
+    game_id: int
+    round_number: int
+
+
+class CategorySetted(Event):
+    game_id: int
+    category_id: int
+
+
+class DuelRoundFinished(Event):
+    game_id: int
+    round_number: int
+    correct_answer_id: int
+
+
+class GameInProcess(Event):
+    game_id: int
+
+
+class FieldDefended(Event):
+    game_id: int
+    attacker_id: int
+    defender_id: int
+    field_id: int
+
+
+class DuelEnded(Event):
+    game_id: int
+
+
+class PlayerAnswered(Event):
+    game_id: int
+    player_id: int
