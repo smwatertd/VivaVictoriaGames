@@ -8,14 +8,9 @@ from entrypoints.schemas import GamesConnectionSchema
 
 from fastapi import APIRouter
 
-from infrastructure.adapters.channel_layers import ChannelLayer
-from infrastructure.adapters.consumers import RedisConsumer
-from infrastructure.adapters.websocket_connections import StarletteWebSocketConnection
-
-from services.messagebus import MessageBus
+from infrastructure import adapters
 
 from starlette.endpoints import WebSocketEndpoint
-from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket
 
 
@@ -25,22 +20,22 @@ router = APIRouter(
 
 
 class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
-    layer: ChannelLayer
+    layer: adapters.ChannelLayer
     encoding = 'json'
 
-    def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        super().__init__(scope, receive, send)
-        self.messagebus: MessageBus = container.messagebus()
-
     async def on_connect(self, websocket: WebSocket) -> None:
-        # TODO: Delete Temp Data
         await super().on_connect(websocket)
         self._get_websocket_data(websocket)
-        await self.layer.group_add(self.data.game_pk, StarletteWebSocketConnection(websocket))
+        channel = adapters.Channel(
+            self.data.user_pk,
+            adapters.StarletteWebSocketConnection(websocket),
+            container.chat_message_consumer(),
+        )
+        await self.layer.group_add(self.data.game_pk, channel)
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         await super().on_disconnect(websocket, close_code)
-        await self.layer.group_discard(self.data.game_pk, StarletteWebSocketConnection(websocket))
+        await self.layer.group_discard(self.data.game_pk, self.data.user_pk)
 
     async def on_receive(self, websocket: WebSocket, data: Any) -> None:
         action, data = self._parse_message(data)
@@ -61,7 +56,8 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
 
 
 class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
-    layer: ChannelLayer = container.channel_layer(consumer_factory=RedisConsumer)
+    layer = container.channel_layer()
+    messagebus = container.messagebus()
 
     async def on_connect(self, websocket: WebSocket) -> None:
         await super().on_connect(websocket)
@@ -85,15 +81,15 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
         command = commands.AttackField(
             game_pk=self.data.game_pk,
             attacker_pk=self.data.user_pk,
-            field_pk=data.get('field_pk'),
+            field_pk=int(data.get('field_pk', 0)),
         )
         await self.messagebus.handle(command, container.unit_of_work())
 
     async def send_answer(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
         command = commands.SendAnswer(
             game_pk=self.data.game_pk,
-            user_pk=self.data.user_pk,
-            answer=data.get('answer_pk'),
+            player_pk=self.data.user_pk,
+            answer_pk=int(data.get('answer_pk', 0)),
         )
         await self.messagebus.handle(command, container.unit_of_work())
 
