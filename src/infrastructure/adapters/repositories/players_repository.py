@@ -20,9 +20,9 @@ class SQLAlchemyPlayersRepository(PlayersRepository):
             raise ValueError(f'Player {id} not found')
         return player
 
-    async def get_or_create(self, id: int, username: str) -> Player:
+    async def get_or_create(self, id: int) -> Player:
         player = await self._session.get(Player, id)
         if player is None:
-            player = Player(id, username)
+            player = Player(id, None)
             self._session.add(player)
         return player
