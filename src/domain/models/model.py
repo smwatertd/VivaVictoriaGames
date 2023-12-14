@@ -2,8 +2,7 @@ from domain.events import Event
 
 
 class Model:
-    def __init__(self, id: int) -> None:
-        self.id = id
+    def __init__(self) -> None:
         self._set_events_default()
 
     def register_event(self, event: Event) -> None:
