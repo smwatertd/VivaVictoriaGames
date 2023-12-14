@@ -11,5 +11,5 @@ class FieldsRepository(Repository, ABC):
         self.seen: set[Field]
 
     @abstractmethod
-    async def get(self, pk: int) -> Field:
+    async def get(self, id: int) -> Field:
         pass
