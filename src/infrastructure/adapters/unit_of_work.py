@@ -33,10 +33,13 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self.games = repositories.SQLAlchemyGamesRepository(self._session)
         self.players = repositories.SQLAlchemyPlayersRepository(self._session)
         self.fields = repositories.SQLAlchemyFieldsRepository(self._session)
+        self.categories = repositories.HTTPCategoriesRepository()
+        self.questions = repositories.HTTPQuestionsRepository()
+        self.answers = repositories.SQLAlchemyAnswersRepository(self._session)
         return await super().__aenter__()
 
     async def __aexit__(self, *args: Any, **kwargs: Any) -> None:
-        return await super().__aexit__(args, kwargs)
+        return await super().__aexit__(*args, **kwargs)
 
     async def rollback(self) -> None:
         await self._session.rollback()

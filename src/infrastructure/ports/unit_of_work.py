@@ -11,6 +11,9 @@ class UnitOfWork(ABC):
     games: repositories.GamesRepository
     players: repositories.PlayersRepository
     fields: repositories.FieldsRepository
+    categories: repositories.CategoriesRepository
+    questions: repositories.QuestionsRepository
+    answers: repositories.AnswersRepository
 
     def __init__(
         self,
