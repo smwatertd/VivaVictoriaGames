@@ -1,0 +1,26 @@
+from domain import events
+
+from infrastructure.ports import Factory
+
+
+class EventFactory(Factory):
+    registry = {
+        'PlayerAdded': events.PlayerAdded,
+        'PlayerRemoved': events.PlayerRemoved,
+        'GameStarted': events.GameStarted,
+        'RoundStarted': events.RoundStarted,
+        'RoundFinished': events.RoundFinished,
+        'FieldCaptured': events.FieldCaptured,
+        'PlayerFieldAttacked': events.PlayerFieldAttacked,
+        'DuelStarted': events.DuelStarted,
+        'DuelRoundStarted': events.DuelRoundStarted,
+        'DuelRoundFinished': events.DuelRoundFinished,
+        'CategorySetted': events.CategorySetted,
+        'QuestionSetted': events.QuestionSetted,
+        'DuelEnded': events.DuelEnded,
+        'PlayerAnswered': events.PlayerAnswered,
+    }
+
+
+class CommandFactory(Factory):
+    registry: dict = {}

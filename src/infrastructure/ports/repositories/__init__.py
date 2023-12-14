@@ -1,0 +1,6 @@
+from infrastructure.ports.repositories.answers_repository import AnswersRepository
+from infrastructure.ports.repositories.categories_repository import CategoriesRepository
+from infrastructure.ports.repositories.fields_repository import FieldsRepository
+from infrastructure.ports.repositories.games_repository import GamesRepository
+from infrastructure.ports.repositories.players_repository import PlayersRepository
+from infrastructure.ports.repositories.questions_repository import QuestionsRepository
