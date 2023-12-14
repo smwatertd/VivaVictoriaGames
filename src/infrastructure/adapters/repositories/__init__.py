@@ -1,3 +1,6 @@
+from infrastructure.adapters.repositories.answers_repository import SQLAlchemyAnswersRepository
+from infrastructure.adapters.repositories.categories_repository import HTTPCategoriesRepository
 from infrastructure.adapters.repositories.fields_repository import SQLAlchemyFieldsRepository
 from infrastructure.adapters.repositories.games_repository import SQLAlchemyGamesRepository
 from infrastructure.adapters.repositories.players_repository import SQLAlchemyPlayersRepository
+from infrastructure.adapters.repositories.questions_repository import HTTPQuestionsRepository
