@@ -1,8 +1,7 @@
 from typing import Callable, Type
 
-from core.settings import game_settings
-
 from domain import commands, events
+from domain.models.strategies import IdentityPlayerTurnSelector
 
 from infrastructure.ports import UnitOfWork
 
@@ -36,23 +35,21 @@ async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(command.game_pk)
         player = await uow.players.get(command.player_pk)
-        answer = await uow.answers.get(command.answer_pk)
-        game.set_player_answer(player, answer)
+        game.set_player_answer(player, command.answer_pk)
         await uow.commit()
 
 
 async def try_start_game(event: events.PlayerAdded, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        if game.is_full():
-            game.start()
+        game.try_start()
         await uow.commit()
 
 
 async def start_round(event: events.GameStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_round()
+        game.start_round(IdentityPlayerTurnSelector())
         await uow.commit()
 
 
@@ -66,11 +63,7 @@ async def start_round_timer(event: events.RoundStarted, uow: UnitOfWork) -> None
 async def check_round_outcome(event: events.RoundFinished, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.increase_round_number(1)
-        if game.round_number == game_settings.max_rounds:
-            game.finish()
-        else:
-            game.start_round()
+        game.check_round_outcome(IdentityPlayerTurnSelector())
         await uow.commit()
 
 
@@ -107,35 +100,39 @@ async def start_duel_round(event: events.DuelStarted, uow: UnitOfWork) -> None:
 async def select_category(event: events.DuelRoundStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        category = await uow.categories.random()
-        game.set_duel_category(category)
+        category_id = await uow.categories.random()
+        game.set_duel_category(category_id)
         await uow.commit()
 
 
 async def select_question(event: events.CategorySetted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        question = await uow.questions.random_by_category(event.category_id)
-        game.set_duel_question(question)
+        question_id = await uow.questions.random_by_category(event.category_id)
+        correct_answer_id = await uow.questions.get_correct_answer(question_id)
+        game.set_duel_question(question_id)
+        game.set_duel_correct_answer(correct_answer_id)
         await uow.commit()
 
 
 async def check_duel_round_outcome(event: events.DuelRoundFinished, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.increase_duel_round_number(1)
-        if game._duel.round_number == game_settings.duel_max_rounds:
-            game.finish_duel()
-        else:
-            game.start_duel_round()
+        game.check_duel_round_outcome()
         await uow.commit()
 
 
 async def check_are_all_players_answered(event: events.PlayerAnswered, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        if game.are_all_players_answered():
-            game.finish_duel_round()
+        game.try_finish_duel_round()
+        await uow.commit()
+
+
+async def check_duel_results(event: events.DuelEnded, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.check_duel_results()
         await uow.commit()
 
 
@@ -178,5 +175,5 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
     events.QuestionSetted: [send_message_notification],
     events.PlayerAnswered: [send_message_notification, check_are_all_players_answered],
     events.DuelRoundFinished: [send_message_notification, check_duel_round_outcome],
-    events.DuelEnded: [send_message_notification],
+    events.DuelEnded: [send_message_notification, check_duel_results],
 }
