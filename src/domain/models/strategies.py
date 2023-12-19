@@ -19,4 +19,4 @@ class IdentityPlayerTurnSelector(PlayerTurnSelector):
         return sorted_players_by_id[round_number % len(sorted_players_by_id)]
 
     def get_order(self, players: list[Player]) -> list[Player]:
-        return sorted(players, key=lambda player: player.id)
+        return sorted(players, key=lambda player: -player.get_id())
