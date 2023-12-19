@@ -1,5 +1,4 @@
-from domain.models import Duel, Game, Player
-from domain.models.question import Question
+from domain.models import Duel, Game
 
 from infrastructure.ports.repositories import GamesRepository
 
@@ -16,19 +15,15 @@ class SQLAlchemyGamesRepository(GamesRepository):
     async def get(self, id: int) -> Game:
         result = await self._session.execute(
             select(Game)
-            .where(Game.id == id)
+            .where(Game._id == id)
             .options(
-                joinedload(Game._players).joinedload(Player._answer),
+                joinedload(Game._players),
                 joinedload(Game._fields),
                 joinedload(Game._duel)
-                .joinedload(Duel._attacker)
-                .joinedload(Player._answer),
+                .joinedload(Duel._attacker),
                 joinedload(Game._duel)
-                .joinedload(Duel._defender)
-                .joinedload(Player._answer),
-                joinedload(Game._duel)
-                .joinedload(Duel._question)
-                .joinedload(Question._answers),
+                .joinedload(Duel._defender),
+                joinedload(Game._player_order),
             ),
         )
         game = result.scalars().first()
