@@ -19,6 +19,7 @@ class EventFactory(Factory):
         'QuestionSetted': events.QuestionSetted,
         'DuelEnded': events.DuelEnded,
         'PlayerAnswered': events.PlayerAnswered,
+        'GameEnded': events.GameEnded,
     }
 
 
