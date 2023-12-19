@@ -36,6 +36,7 @@ duels = Table(
     Column('defender_id', Integer, ForeignKey('players.id'), nullable=True, default=None, server_default=None),
     Column('category_id', Integer, nullable=True, default=None, server_default=None),
     Column('question_id', Integer, nullable=True, default=None, server_default=None),
+    Column('correct_answer_id', Integer, nullable=True, default=None, server_default=None),
     Column('field_id', Integer, ForeignKey('fields.id'), nullable=True, default=None, server_default=None),
 )
 
@@ -155,6 +156,7 @@ def start_mappers() -> None:
             '_round_number': duels.c.round_number,
             '_category_id': duels.c.category_id,
             '_question_id': duels.c.question_id,
+            '_correct_answer_id': duels.c.correct_answer_id,
             '_game': relationship(
                 models.Game,
                 uselist=False,
