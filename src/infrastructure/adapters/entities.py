@@ -46,6 +46,7 @@ players = Table(
     Column('id', Integer, primary_key=True),
     Column('game_id', Integer, ForeignKey('games.id'), nullable=True),
     Column('answer_id', Integer, ForeignKey('answers.id'), nullable=True, default=None, server_default=None),
+    Column('game_order_id', Integer, ForeignKey('games.id'), nullable=True, default=None, server_default=None),
 )
 
 fields = Table(
@@ -151,6 +152,12 @@ def start_mappers() -> None:
                 uselist=False,
                 foreign_keys=[players.c.game_id],
             ),
+            '_game_order': relationship(
+                models.Game,
+                back_populates='_player_order',
+                uselist=False,
+                foreign_keys=[players.c.game_order_id],
+            ),
             '_answer': relationship(
                 models.Answer,
                 back_populates='_player_answers',
@@ -182,6 +189,13 @@ def start_mappers() -> None:
             '_players': relationship(
                 models.Player,
                 back_populates='_game',
+                foreign_keys=[players.c.game_id],
+            ),
+            '_player_order': relationship(
+                models.Player,
+                back_populates='_game_order',
+                uselist=False,
+                foreign_keys=[players.c.game_order_id],
             ),
             '_fields': relationship(
                 models.Field,
