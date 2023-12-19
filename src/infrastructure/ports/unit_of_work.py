@@ -5,6 +5,7 @@ from domain.events import Event
 
 from infrastructure.adapters.message_serializer import MessageSerializer
 from infrastructure.ports import Producer, repositories
+from infrastructure.ports.clients import HTTPClient
 
 
 class UnitOfWork(ABC):
@@ -20,10 +21,12 @@ class UnitOfWork(ABC):
         event_producer: Producer,
         serializer: MessageSerializer,
         chat_message_producer: Producer,
+        http_client: HTTPClient,
     ) -> None:
         self._event_producer = event_producer
         self.serializer = serializer
         self.chat_message_producer = chat_message_producer
+        self._http_client = http_client
 
     async def __aenter__(self) -> 'UnitOfWork':
         return self
