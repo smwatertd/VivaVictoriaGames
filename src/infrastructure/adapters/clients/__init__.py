@@ -1,1 +1,2 @@
 from infrastructure.adapters.clients.http_clients import HTTPXClient
+from infrastructure.adapters.clients.questions_client import QuestionsClient
