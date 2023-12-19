@@ -2,9 +2,11 @@ from typing import Any
 
 from core.settings import db_settings
 
+from infrastructure.adapters import clients
 from infrastructure.adapters import repositories
 from infrastructure.adapters.message_serializer import MessageSerializer
 from infrastructure.ports import Producer, UnitOfWork
+from infrastructure.ports.clients import HTTPClient
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -22,10 +24,10 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         event_producer: Producer,
         serializer: MessageSerializer,
         chat_message_producer: Producer,
+        http_client: HTTPClient,
         session_factory: async_sessionmaker[AsyncSession] = SQLALCHEMY_DEFAULT_SESSION_FACTORY,
     ) -> None:
-        super().__init__(event_producer, serializer, chat_message_producer)
-        self.chat_message_producer = chat_message_producer
+        super().__init__(event_producer, serializer, chat_message_producer, http_client)
         self._session_factory = session_factory
 
     async def __aenter__(self) -> 'SQLAlchemyUnitOfWork':
@@ -33,8 +35,8 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self.games = repositories.SQLAlchemyGamesRepository(self._session)
         self.players = repositories.SQLAlchemyPlayersRepository(self._session)
         self.fields = repositories.SQLAlchemyFieldsRepository(self._session)
-        self.categories = repositories.HTTPCategoriesRepository()
-        self.questions = repositories.HTTPQuestionsRepository()
+        self.questions = clients.QuestionsClient(self._http_client)
+        self.categories = clients.CategoriesClient(self._http_client)
         self.answers = repositories.SQLAlchemyAnswersRepository(self._session)
         return await super().__aenter__()
 
