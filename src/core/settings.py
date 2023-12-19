@@ -70,8 +70,18 @@ class GameSettings(BaseSettings):
     )
 
 
+class QuestionsSettings(BaseSettings):
+    url: str = 'http://localhost:8000/api/questions'
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_prefix='QUESTIONS_',
+    )
+
+
 app_settings = AppSettings()
 redis_settings = RedisSettings()
 rabbitmq_settings = RabbitMQSettings()
 db_settings = DatabaseSettings()
 game_settings = GameSettings()
+questions_settings = QuestionsSettings()
