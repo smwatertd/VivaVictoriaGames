@@ -3,6 +3,7 @@ from typing import Any, Generator
 
 from domain.events import Event
 
+from infrastructure.adapters.clients import CategoriesClient, QuestionsClient
 from infrastructure.adapters.message_serializer import MessageSerializer
 from infrastructure.ports import Producer, repositories
 from infrastructure.ports.clients import HTTPClient
@@ -12,9 +13,8 @@ class UnitOfWork(ABC):
     games: repositories.GamesRepository
     players: repositories.PlayersRepository
     fields: repositories.FieldsRepository
-    categories: repositories.CategoriesRepository
-    questions: repositories.QuestionsRepository
-    answers: repositories.AnswersRepository
+    categories: CategoriesClient
+    questions: QuestionsClient
 
     def __init__(
         self,

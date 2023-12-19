@@ -37,7 +37,6 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self.fields = repositories.SQLAlchemyFieldsRepository(self._session)
         self.questions = clients.QuestionsClient(self._http_client)
         self.categories = clients.CategoriesClient(self._http_client)
-        self.answers = repositories.SQLAlchemyAnswersRepository(self._session)
         return await super().__aenter__()
 
     async def __aexit__(self, *args: Any, **kwargs: Any) -> None:
