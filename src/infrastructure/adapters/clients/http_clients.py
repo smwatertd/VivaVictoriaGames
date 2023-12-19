@@ -22,3 +22,13 @@ class HTTPXClient(HTTPClient):
             response = await client.get(f'{questions_settings.url}/categories')
             data = response.json()
             return [CategorySchema(id=category['id'], name=category['name']) for category in data]
+
+    async def get_question(self, question_id: int) -> QuestionSchema:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f'{questions_settings.url}/questions/{question_id}')
+            data = response.json()
+            answers = [
+                AnswerSchema(id=answer['id'], body=answer['body'], is_correct=answer['is_correct'])
+                for answer in data['answers']
+            ]
+            return QuestionSchema(id=data['id'], body=data['body'], answers=answers)

@@ -11,3 +11,7 @@ class HTTPClient(ABC):
     @abstractmethod
     async def get_all_categories(self) -> list[CategorySchema]:
         pass
+
+    @abstractmethod
+    async def get_question(self, question_id: int) -> QuestionSchema:
+        pass
