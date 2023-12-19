@@ -112,8 +112,6 @@ class GameInProcess(Event):
 
 class FieldDefended(Event):
     game_id: int
-    attacker_id: int
-    defender_id: int
     field_id: int
 
 
