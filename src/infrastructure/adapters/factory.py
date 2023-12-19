@@ -20,6 +20,7 @@ class EventFactory(Factory):
         'DuelEnded': events.DuelEnded,
         'PlayerAnswered': events.PlayerAnswered,
         'GameEnded': events.GameEnded,
+        'FieldDefended': events.FieldDefended,
     }
 
 
