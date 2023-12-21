@@ -8,6 +8,7 @@ class Event(BaseModel):
 class PlayerAdded(Event):
     game_id: int
     player_id: int
+    game_players_ids: list[int]
 
 
 class GameStarted(Event):
