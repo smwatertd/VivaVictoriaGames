@@ -53,6 +53,7 @@ fields = Table(
     'fields',
     metadata,
     Column('id', Integer, primary_key=True),
+    Column('value', Integer, default=0, server_default='0'),
     Column('game_id', Integer, ForeignKey('games.id')),
     Column('owner_id', Integer, ForeignKey('players.id'), nullable=True, default=None, server_default=None),
 )
@@ -65,6 +66,7 @@ def start_mappers() -> None:
         fields,
         properties={
             '_id': fields.c.id,
+            '_value': fields.c.value,
             '_game': relationship(
                 models.Game,
                 back_populates='_fields',
