@@ -93,6 +93,8 @@ class Duel:
             and self._defender.get_answer_id() != self._correct_answer_id
         ):
             self._field.set_owner(self._attacker)
+        else:
+            self._field.increase_value(1)
         self._reset_members_answers()
 
     def start_round(self) -> None:
