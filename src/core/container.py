@@ -4,6 +4,8 @@ from core.settings import rabbitmq_settings, redis_settings
 
 from dependency_injector import containers, providers
 
+from domain.strategies import ConnectionTimeAndIdentityPlayerTurnSelector, PlayerTurnSelector
+
 from infrastructure import adapters, ports
 from infrastructure.adapters.clients import HTTPXClient
 from infrastructure.ports.clients import HTTPClient
@@ -81,6 +83,10 @@ class Container(containers.DeclarativeContainer):
 
     channel_layer: Type[adapters.ChannelLayer] = providers.Factory(
         adapters.ChannelLayer,
+    )  # type: ignore
+
+    player_turn_selector: Type[PlayerTurnSelector] = providers.Factory(
+        ConnectionTimeAndIdentityPlayerTurnSelector,
     )  # type: ignore
 
 
