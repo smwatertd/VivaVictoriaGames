@@ -5,36 +5,15 @@ class Event(BaseModel):
     pass
 
 
-class FieldEvent(Event):
-    game_pk: int
-    field_pk: int
-
-
 class PlayerAdded(Event):
     game_id: int
     player_id: int
+    game_players_ids: list[int]
 
 
 class GameStarted(Event):
     game_id: int
-
-
-class GameIsFull(Event):
-    game_id: int
-
-
-class GameStateChanged(Event):
-    game_id: int
-    state: str
-
-
-class GameClosed(Event):
-    game_id: int
-
-
-class PlayerTurnChanged(Event):
-    game_id: int
-    player_id: int
+    players_order_ids: list[int]
 
 
 class PlayerRemoved(Event):
@@ -42,14 +21,17 @@ class PlayerRemoved(Event):
     player_id: int
 
 
-class FieldAttacked(FieldEvent):
-    attacker_pk: int
+class FieldAttacked(Event):
+    game_id: int
+    attacker_id: int
+    field_id: int
 
 
 class FieldCaptured(Event):
     game_id: int
     field_id: int
     capturer_id: int
+    new_field_value: int
 
 
 class PlayerFieldAttacked(Event):
@@ -71,10 +53,6 @@ class QuestionSetted(Event):
     question_id: int
 
 
-class AllPlayersConnected(Event):
-    game_id: int
-
-
 class RoundStarted(Event):
     game_id: int
     round_number: int
@@ -86,13 +64,21 @@ class RoundFinished(Event):
     round_number: int
 
 
+class GameResultRow(BaseModel):
+    place: int
+    player_id: int
+    score: int
+
+
 class GameEnded(Event):
     game_id: int
+    results: list[GameResultRow]
 
 
 class DuelRoundStarted(Event):
     game_id: int
     round_number: int
+    category_id: int
 
 
 class CategorySetted(Event):
@@ -106,15 +92,10 @@ class DuelRoundFinished(Event):
     correct_answer_id: int
 
 
-class GameInProcess(Event):
-    game_id: int
-
-
 class FieldDefended(Event):
     game_id: int
-    attacker_id: int
-    defender_id: int
     field_id: int
+    new_field_value: int
 
 
 class DuelEnded(Event):

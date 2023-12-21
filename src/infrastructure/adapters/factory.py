@@ -10,6 +10,7 @@ class EventFactory(Factory):
         'GameStarted': events.GameStarted,
         'RoundStarted': events.RoundStarted,
         'RoundFinished': events.RoundFinished,
+        'FieldAttacked': events.FieldAttacked,
         'FieldCaptured': events.FieldCaptured,
         'PlayerFieldAttacked': events.PlayerFieldAttacked,
         'DuelStarted': events.DuelStarted,
@@ -19,6 +20,8 @@ class EventFactory(Factory):
         'QuestionSetted': events.QuestionSetted,
         'DuelEnded': events.DuelEnded,
         'PlayerAnswered': events.PlayerAnswered,
+        'GameEnded': events.GameEnded,
+        'FieldDefended': events.FieldDefended,
     }
 
 

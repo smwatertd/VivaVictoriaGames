@@ -1,18 +1,11 @@
 from typing import Any
 
+from core.container import container
+
 from domain import enums, models
 from domain.events import Event
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    Enum,
-    ForeignKey,
-    Integer,
-    MetaData,
-    Table,
-    event,
-)
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, MetaData, Table, event, func
 from sqlalchemy.orm import registry, relationship
 
 
@@ -31,98 +24,44 @@ duels = Table(
     'duels',
     metadata,
     Column('id', Integer, primary_key=True),
+    Column('round_number', Integer, default=0, server_default='0'),
     Column('game_id', Integer, ForeignKey('games.id')),
     Column('attacker_id', Integer, ForeignKey('players.id'), nullable=True, default=None, server_default=None),
     Column('defender_id', Integer, ForeignKey('players.id'), nullable=True, default=None, server_default=None),
-    Column('category_id', Integer, ForeignKey('categories.id'), nullable=True, default=None, server_default=None),
-    Column('question_id', Integer, ForeignKey('questions.id'), nullable=True, default=None, server_default=None),
+    Column('category_id', Integer, nullable=True, default=None, server_default=None),
+    Column('question_id', Integer, nullable=True, default=None, server_default=None),
+    Column('correct_answer_id', Integer, nullable=True, default=None, server_default=None),
     Column('field_id', Integer, ForeignKey('fields.id'), nullable=True, default=None, server_default=None),
-    Column('round_number', Integer, default=0, server_default='0'),
 )
 
 players = Table(
     'players',
     metadata,
     Column('id', Integer, primary_key=True),
+    Column('connected_at', DateTime, default=func.now(), server_default=func.now()),
     Column('game_id', Integer, ForeignKey('games.id'), nullable=True),
-    Column('answer_id', Integer, ForeignKey('answers.id'), nullable=True, default=None, server_default=None),
+    Column('answer_id', Integer, nullable=True, default=None, server_default=None),
+    Column('game_order_id', Integer, ForeignKey('games.id'), nullable=True, default=None, server_default=None),
 )
 
 fields = Table(
     'fields',
     metadata,
     Column('id', Integer, primary_key=True),
+    Column('value', Integer, default=0, server_default='0'),
     Column('game_id', Integer, ForeignKey('games.id')),
     Column('owner_id', Integer, ForeignKey('players.id'), nullable=True, default=None, server_default=None),
-)
-
-categories = Table(
-    'categories',
-    metadata,
-    Column('id', Integer, primary_key=True),
-)
-
-questions = Table(
-    'questions',
-    metadata,
-    Column('id', Integer, primary_key=True),
-)
-
-answers = Table(
-    'answers',
-    metadata,
-    Column('id', Integer, primary_key=True),
-    Column('is_correct', Boolean, default=False, server_default='false'),
-    Column('question_id', Integer, ForeignKey('questions.id')),
 )
 
 
 def start_mappers() -> None:
     mapper.dispose()
     mapper.map_imperatively(
-        models.Category,
-        categories,
-        properties={
-            '_duels': relationship(
-                models.Duel,
-                back_populates='_category',
-            ),
-        },
-    )
-    mapper.map_imperatively(
-        models.Answer,
-        answers,
-        properties={
-            '_question': relationship(
-                models.Question,
-                back_populates='_answers',
-                uselist=False,
-                foreign_keys=[answers.c.question_id],
-            ),
-            '_player_answers': relationship(
-                models.Player,
-                back_populates='_answer',
-            ),
-        },
-    )
-    mapper.map_imperatively(
-        models.Question,
-        questions,
-        properties={
-            '_answers': relationship(
-                models.Answer,
-                back_populates='_question',
-            ),
-            '_duels': relationship(
-                models.Duel,
-                back_populates='_question',
-            ),
-        },
-    )
-    mapper.map_imperatively(
         models.Field,
         fields,
         properties={
+            '_id': fields.c.id,
+            '_value': fields.c.value,
             '_game': relationship(
                 models.Game,
                 back_populates='_fields',
@@ -145,17 +84,20 @@ def start_mappers() -> None:
         models.Player,
         players,
         properties={
+            '_id': players.c.id,
+            '_answer_id': players.c.answer_id,
+            '_connected_at': players.c.connected_at,
             '_game': relationship(
                 models.Game,
                 back_populates='_players',
                 uselist=False,
                 foreign_keys=[players.c.game_id],
             ),
-            '_answer': relationship(
-                models.Answer,
-                back_populates='_player_answers',
+            '_game_order': relationship(
+                models.Game,
+                back_populates='_player_order',
                 uselist=False,
-                foreign_keys=[players.c.answer_id],
+                foreign_keys=[players.c.game_order_id],
             ),
             '_fields': relationship(
                 models.Field,
@@ -179,9 +121,19 @@ def start_mappers() -> None:
         models.Game,
         games,
         properties={
+            '_id': games.c.id,
+            '_state': games.c.state,
+            '_round_number': games.c.round_number,
             '_players': relationship(
                 models.Player,
                 back_populates='_game',
+                foreign_keys=[players.c.game_id],
+            ),
+            '_player_order': relationship(
+                models.Player,
+                back_populates='_game_order',
+                uselist=False,
+                foreign_keys=[players.c.game_order_id],
             ),
             '_fields': relationship(
                 models.Field,
@@ -198,6 +150,11 @@ def start_mappers() -> None:
         models.Duel,
         duels,
         properties={
+            '_id': duels.c.id,
+            '_round_number': duels.c.round_number,
+            '_category_id': duels.c.category_id,
+            '_question_id': duels.c.question_id,
+            '_correct_answer_id': duels.c.correct_answer_id,
             '_game': relationship(
                 models.Game,
                 uselist=False,
@@ -216,18 +173,6 @@ def start_mappers() -> None:
                 back_populates='_duel_as_defender',
                 foreign_keys=[duels.c.defender_id],
             ),
-            '_category': relationship(
-                models.Category,
-                uselist=False,
-                back_populates='_duels',
-                foreign_keys=[duels.c.category_id],
-            ),
-            '_question': relationship(
-                models.Question,
-                uselist=False,
-                back_populates='_duels',
-                foreign_keys=[duels.c.question_id],
-            ),
             '_field': relationship(
                 models.Field,
                 uselist=False,
@@ -241,3 +186,4 @@ def start_mappers() -> None:
 @event.listens_for(models.Game, 'load')
 def on_game_load(game: models.Game, _: Any) -> None:
     game._events: list[Event] = []  # type: ignore
+    game._player_turn_selector = container.player_turn_selector()

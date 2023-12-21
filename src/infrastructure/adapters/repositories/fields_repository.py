@@ -14,7 +14,7 @@ class SQLAlchemyFieldsRepository(FieldsRepository):
     async def get(self, id: int) -> Field:
         result = await self._session.execute(
             select(Field)
-            .where(Field.id == id)
+            .where(Field._id == id)
             .options(
                 joinedload(Field._owner),
             ),
