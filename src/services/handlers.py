@@ -136,17 +136,6 @@ async def check_duel_results(event: events.DuelEnded, uow: UnitOfWork) -> None:
         await uow.commit()
 
 
-async def send_message_notification(event: events.Event, uow: UnitOfWork) -> None:
-    try:
-        game_id = event.game_id
-    except AttributeError:
-        return
-
-    async with uow:
-        message = uow.serializer.serialize(event)
-        await uow.chat_message_producer.publish(str(game_id), message)
-
-
 COMMAND_HANDLERS = {
     commands.AddUser: add_game_player,
     commands.RemoveUser: remove_game_player,
@@ -155,25 +144,25 @@ COMMAND_HANDLERS = {
 }
 
 EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
-    events.PlayerAdded: [send_message_notification, try_start_game],
-    events.PlayerRemoved: [send_message_notification],
+    events.PlayerAdded: [try_start_game],
+    # events.PlayerRemoved: [],
 
-    events.GameStarted: [send_message_notification, start_round],
-    events.GameEnded: [send_message_notification],
+    events.GameStarted: [start_round],
+    # events.GameEnded: [],
 
-    events.RoundStarted: [send_message_notification],
-    # events.RoundStarted: [send_message_notification, start_round_timer],
-    events.PlayerFieldAttacked: [send_message_notification, start_duel],
-    events.FieldCaptured: [send_message_notification, finish_round],
-    events.FieldDefended: [send_message_notification, finish_round],
-    events.RoundFinished: [send_message_notification, check_round_outcome],
+    # events.RoundStarted: [],
+    # events.RoundStarted: [, start_round_timer],
+    events.PlayerFieldAttacked: [start_duel],
+    events.FieldCaptured: [finish_round],
+    events.FieldDefended: [finish_round],
+    events.RoundFinished: [check_round_outcome],
 
-    events.DuelStarted: [send_message_notification, start_duel_round],
-    events.DuelRoundStarted: [send_message_notification, select_category],
-    # events.DuelRoundStarted: [send_message_notification, select_category, start_duel_round_timer],
-    events.CategorySetted: [send_message_notification, select_question],
-    events.QuestionSetted: [send_message_notification],
-    events.PlayerAnswered: [send_message_notification, check_are_all_players_answered],
-    events.DuelRoundFinished: [send_message_notification, check_duel_round_outcome],
-    events.DuelEnded: [send_message_notification, check_duel_results],
+    events.DuelStarted: [start_duel_round],
+    events.DuelRoundStarted: [select_category],
+    # events.DuelRoundStarted: [, select_category, start_duel_round_timer],
+    events.CategorySetted: [select_question],
+    # events.QuestionSetted: [],
+    events.PlayerAnswered: [check_are_all_players_answered],
+    events.DuelRoundFinished: [check_duel_round_outcome],
+    events.DuelEnded: [check_duel_results],
 }
