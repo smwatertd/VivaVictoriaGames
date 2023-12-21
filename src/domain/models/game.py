@@ -128,7 +128,19 @@ class Game(Model):
 
     def finish(self) -> None:
         self._state = enums.GameState.ENDED
-        self.register_event(events.GameEnded(game_id=self._id))
+        sorted_scores = sorted(
+            ((player.get_id(), player.calculate_score()) for player in self._players),
+            key=lambda result: -result[1],
+        )
+        self.register_event(
+            events.GameEnded(
+                game_id=self._id,
+                results=[
+                    events.GameResultRow(place=place, player_id=player_id, score=score)
+                    for place, (player_id, score) in enumerate(sorted_scores, start=1)
+                ],
+            ),
+        )
 
     def try_finish_duel_round(self) -> None:
         if self.are_all_players_answered():
