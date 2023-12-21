@@ -105,12 +105,12 @@ async def select_category(event: events.DuelRoundStarted, uow: UnitOfWork) -> No
         await uow.commit()
 
 
-async def select_question(event: events.CategorySetted, uow: UnitOfWork) -> None:
+async def select_question(event: events.DuelRoundStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
         question_id = await uow.questions.random_by_category(event.category_id)
-        correct_answer_id = await uow.questions.get_correct_answer(question_id)
         game.set_duel_question(question_id)
+        correct_answer_id = await uow.questions.get_correct_answer(question_id)
         game.set_duel_correct_answer(correct_answer_id)
         await uow.commit()
 
@@ -167,10 +167,10 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
     events.FieldDefended: [finish_round],
     events.RoundFinished: [check_round_outcome],
 
-    events.DuelStarted: [start_duel_round],
-    events.DuelRoundStarted: [select_category],
+    events.DuelStarted: [select_category],
+    events.CategorySetted: [start_duel_round],
+    events.DuelRoundStarted: [select_question],
     # events.DuelRoundStarted: [, select_category, start_duel_round_timer],
-    events.CategorySetted: [select_question],
     # events.QuestionSetted: [],
     events.PlayerAnswered: [check_are_all_players_answered],
     events.DuelRoundFinished: [check_duel_round_outcome],

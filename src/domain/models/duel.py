@@ -98,6 +98,9 @@ class Duel:
     def start_round(self) -> None:
         self._reset_members_answers()
 
+    def get_category_id(self) -> int:
+        return self._category_id
+
     def _reset_members_answers(self) -> None:
         self._attacker.reset_answer_id()
         self._defender.reset_answer_id()

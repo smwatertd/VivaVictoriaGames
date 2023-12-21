@@ -112,6 +112,7 @@ class Game(Model):
             events.DuelRoundStarted(
                 game_id=self._id,
                 round_number=self._duel.get_round_number(),
+                category_id=self._duel.get_category_id(),
             ),
         )
 
@@ -169,6 +170,9 @@ class Game(Model):
             self._start_duel(player, field)
         else:
             self._capture_field(player, field)
+
+    def get_duel_category(self) -> int:
+        return self._duel.get_category_id()
 
     def _increase_round_number(self, value: int = 1) -> None:
         self._round_number += value
