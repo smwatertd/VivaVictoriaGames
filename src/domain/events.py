@@ -12,6 +12,7 @@ class PlayerAdded(Event):
 
 class GameStarted(Event):
     game_id: int
+    players_order_ids: list[int]
 
 
 class PlayerRemoved(Event):
