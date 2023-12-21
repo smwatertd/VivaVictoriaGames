@@ -1,11 +1,17 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from domain.models.field import Field
 
 
 class Player:
-    def __init__(self, id: int, answer_id: int | None, connected_at: datetime) -> None:
+    def __init__(self, id: int, answer_id: int | None, connected_at: datetime, fields: list['Field']) -> None:
         self._id = id
         self._answer_id = answer_id
         self._connected_at = connected_at
+        self._fields = fields
 
     def __repr__(self) -> str:
         return f'Player(id={self._id}, answer={self._answer_id})'
@@ -37,3 +43,6 @@ class Player:
 
     def get_connected_at(self) -> datetime:
         return self._connected_at
+
+    def calculate_score(self) -> int:
+        return sum(field.get_value() for field in self._fields)
