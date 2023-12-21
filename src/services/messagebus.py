@@ -36,5 +36,5 @@ class MessageBus:
 
     async def _handle_event(self, event: Event, uow: UnitOfWork) -> None:
         # TODO: Fix async
-        for handler in self.event_handlers[type(event)]:
+        for handler in self.event_handlers.get(type(event), []):
             await handler(event, uow)
