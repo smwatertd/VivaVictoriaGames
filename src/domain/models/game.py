@@ -220,7 +220,13 @@ class Game(Model):
     def _add_player(self, player: Player) -> None:
         self._players.append(player)
         player.set_connected_at(datetime.utcnow())
-        self.register_event(events.PlayerAdded(game_id=self._id, player_id=player.get_id()))
+        self.register_event(
+            events.PlayerAdded(
+                game_id=self._id,
+                player_id=player.get_id(),
+                game_players_ids=[player.get_id() for player in self._players],
+            ),
+        )
 
     def _remove_player(self, player: Player) -> None:
         if player not in self._players:
