@@ -30,6 +30,7 @@ class RabbitMQSettings(BaseSettings):
     port: int = 5672
     virtual_host: str = '/'
     exchange: str = 'games'
+    games_events_queue: str = 'games.events'
 
     model_config = SettingsConfigDict(
         env_file='.env',
