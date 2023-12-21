@@ -1,7 +1,11 @@
+from datetime import datetime
+
+
 class Player:
-    def __init__(self, id: int, answer_id: int | None) -> None:
+    def __init__(self, id: int, answer_id: int | None, connected_at: datetime) -> None:
         self._id = id
         self._answer_id = answer_id
+        self._connected_at = connected_at
 
     def __repr__(self) -> str:
         return f'Player(id={self._id}, answer={self._answer_id})'
@@ -27,3 +31,9 @@ class Player:
 
     def reset_answer_id(self) -> None:
         self._answer_id = None
+
+    def set_connected_at(self, connected_at: datetime) -> None:
+        self._connected_at = connected_at
+
+    def get_connected_at(self) -> datetime:
+        return self._connected_at
