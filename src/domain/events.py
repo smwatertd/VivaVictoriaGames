@@ -19,6 +19,12 @@ class PlayerRemoved(Event):
     player_id: int
 
 
+class FieldAttacked(Event):
+    game_id: int
+    attacker_id: int
+    field_id: int
+
+
 class FieldCaptured(Event):
     game_id: int
     field_id: int
