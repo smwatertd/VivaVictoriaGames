@@ -1,4 +1,4 @@
-from domain.models import Duel, Game
+from domain.models import Duel, Game, Player
 
 from infrastructure.ports.repositories import GamesRepository
 
@@ -17,7 +17,8 @@ class SQLAlchemyGamesRepository(GamesRepository):
             select(Game)
             .where(Game._id == id)
             .options(
-                joinedload(Game._players),
+                joinedload(Game._players)
+                .joinedload(Player._fields),
                 joinedload(Game._fields),
                 joinedload(Game._duel)
                 .joinedload(Duel._attacker),
