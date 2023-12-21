@@ -146,10 +146,17 @@ class Game(Model):
                     game_id=self._id,
                     field_id=field.get_id(),
                     capturer_id=attacker.get_id(),
+                    new_field_value=field.get_value(),
                 ),
             )
         else:
-            self.register_event(events.FieldDefended(game_id=self._id, field_id=field.get_id()))
+            self.register_event(
+                events.FieldDefended(
+                    game_id=self._id,
+                    field_id=field.get_id(),
+                    new_field_value=field.get_value(),
+                ),
+            )
 
     def check_round_outcome(self, player_turn_selector: PlayerTurnSelector) -> None:
         if self._round_number == game_settings.max_rounds:
@@ -225,6 +232,7 @@ class Game(Model):
                 game_id=self._id,
                 field_id=field.get_id(),
                 capturer_id=capturer.get_id(),
+                new_field_value=field.get_value(),
             ),
         )
 
