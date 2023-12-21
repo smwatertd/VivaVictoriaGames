@@ -29,6 +29,7 @@ class FieldCaptured(Event):
     game_id: int
     field_id: int
     capturer_id: int
+    new_field_value: int
 
 
 class PlayerFieldAttacked(Event):
