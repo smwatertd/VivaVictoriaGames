@@ -10,6 +10,7 @@ class EventFactory(Factory):
         'GameStarted': events.GameStarted,
         'RoundStarted': events.RoundStarted,
         'RoundFinished': events.RoundFinished,
+        'FieldAttacked': events.FieldAttacked,
         'FieldCaptured': events.FieldCaptured,
         'PlayerFieldAttacked': events.PlayerFieldAttacked,
         'DuelStarted': events.DuelStarted,
