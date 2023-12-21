@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from core.settings import game_settings
 
 from domain import enums, events, exceptions
@@ -5,7 +7,7 @@ from domain.models.duel import Duel
 from domain.models.field import Field
 from domain.models.model import Model
 from domain.models.player import Player
-from domain.models.strategies import PlayerTurnSelector
+from domain.strategies import PlayerTurnSelector
 
 
 class Game(Model):
@@ -18,6 +20,7 @@ class Game(Model):
         players: list[Player],
         fields: list[Field],
         duel: Duel,
+        player_turn_selector: PlayerTurnSelector,
     ) -> None:
         super().__init__()
         self._id = id
@@ -27,6 +30,7 @@ class Game(Model):
         self._players = players
         self._fields = fields
         self._duel = duel
+        self._player_turn_selector = player_turn_selector
 
     def __repr__(self) -> str:
         return """Game(id={}, state={}, round_number={}, player_order={}, players={}, fields={}, duel={})""".format(
@@ -53,11 +57,17 @@ class Game(Model):
     def start(self) -> None:
         self._round_number = 1
         self._state = enums.GameState.IN_PROCESS
-        self.register_event(events.GameStarted(game_id=self._id))
+        players_order = self._player_turn_selector.get_order(self._players)
+        self.register_event(
+            events.GameStarted(
+                game_id=self._id,
+                players_order_ids=[player.get_id() for player in players_order],
+            ),
+        )
 
-    def start_round(self, player_turn_selector: PlayerTurnSelector) -> None:
+    def start_round(self) -> None:
         self._state = enums.GameState.ATTACK_WAITING
-        self._player_order = player_turn_selector.select(self._round_number, self._players)
+        self._player_order = self._player_turn_selector.select(self._round_number, self._players)
         self.register_event(
             events.RoundStarted(
                 game_id=self._id,
@@ -158,12 +168,12 @@ class Game(Model):
                 ),
             )
 
-    def check_round_outcome(self, player_turn_selector: PlayerTurnSelector) -> None:
+    def check_round_outcome(self) -> None:
         if self._round_number == game_settings.max_rounds:
             self.finish()
         else:
             self._increase_round_number(1)
-            self.start_round(player_turn_selector)
+            self.start_round()
 
     def check_duel_round_outcome(self) -> None:
         if self._duel.check_round_outcome():
@@ -197,6 +207,7 @@ class Game(Model):
 
     def _add_player(self, player: Player) -> None:
         self._players.append(player)
+        player.set_connected_at(datetime.utcnow())
         self.register_event(events.PlayerAdded(game_id=self._id, player_id=player.get_id()))
 
     def _remove_player(self, player: Player) -> None:
