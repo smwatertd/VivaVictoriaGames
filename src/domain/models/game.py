@@ -164,6 +164,12 @@ class Game(Model):
             self._increase_duel_round_number(1)
             self.start_duel_round()
 
+    def check_attack_outcome(self, player: Player, field: Field) -> None:
+        if field.is_captured():
+            self._start_duel(player, field)
+        else:
+            self._capture_field(player, field)
+
     def _increase_round_number(self, value: int = 1) -> None:
         self._round_number += value
 
@@ -197,10 +203,13 @@ class Game(Model):
             raise exceptions.NotYourTurn()
 
     def _attack_field(self, player: Player, field: Field) -> None:
-        if field.is_captured():
-            self._start_duel(player, field)
-        else:
-            self._capture_field(player, field)
+        self.register_event(
+            events.FieldAttacked(
+                game_id=self._id,
+                attacker_id=player.get_id(),
+                field_id=field.get_id(),
+            ),
+        )
 
     def is_full(self) -> bool:
         return len(self._players) == game_settings.players_count_to_start

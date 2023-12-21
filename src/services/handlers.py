@@ -136,6 +136,15 @@ async def check_duel_results(event: events.DuelEnded, uow: UnitOfWork) -> None:
         await uow.commit()
 
 
+async def check_attack_outcome(event: events.FieldAttacked, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        player = await uow.players.get(event.attacker_id)
+        field = await uow.fields.get(event.field_id)
+        game.check_attack_outcome(player, field)
+        await uow.commit()
+
+
 COMMAND_HANDLERS = {
     commands.AddUser: add_game_player,
     commands.RemoveUser: remove_game_player,
@@ -152,6 +161,7 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
 
     # events.RoundStarted: [],
     # events.RoundStarted: [, start_round_timer],
+    events.FieldAttacked: [check_attack_outcome],
     events.PlayerFieldAttacked: [start_duel],
     events.FieldCaptured: [finish_round],
     events.FieldDefended: [finish_round],
