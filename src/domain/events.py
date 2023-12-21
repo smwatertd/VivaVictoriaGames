@@ -86,6 +86,7 @@ class DuelRoundFinished(Event):
 class FieldDefended(Event):
     game_id: int
     field_id: int
+    new_field_value: int
 
 
 class DuelEnded(Event):
