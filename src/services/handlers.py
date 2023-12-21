@@ -1,7 +1,6 @@
 from typing import Callable, Type
 
 from domain import commands, events
-from domain.models.strategies import IdentityPlayerTurnSelector
 
 from infrastructure.ports import UnitOfWork
 
@@ -49,7 +48,7 @@ async def try_start_game(event: events.PlayerAdded, uow: UnitOfWork) -> None:
 async def start_round(event: events.GameStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_round(IdentityPlayerTurnSelector())
+        game.start_round()
         await uow.commit()
 
 
@@ -63,7 +62,7 @@ async def start_round_timer(event: events.RoundStarted, uow: UnitOfWork) -> None
 async def check_round_outcome(event: events.RoundFinished, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.check_round_outcome(IdentityPlayerTurnSelector())
+        game.check_round_outcome()
         await uow.commit()
 
 
