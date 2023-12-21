@@ -1,17 +1,11 @@
 from typing import Any
 
+from core.container import container
+
 from domain import enums, models
 from domain.events import Event
 
-from sqlalchemy import (
-    Column,
-    Enum,
-    ForeignKey,
-    Integer,
-    MetaData,
-    Table,
-    event,
-)
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, MetaData, Table, event, func
 from sqlalchemy.orm import registry, relationship
 
 
@@ -44,6 +38,7 @@ players = Table(
     'players',
     metadata,
     Column('id', Integer, primary_key=True),
+    Column('connected_at', DateTime, default=func.now(), server_default=func.now()),
     Column('game_id', Integer, ForeignKey('games.id'), nullable=True),
     Column('answer_id', Integer, nullable=True, default=None, server_default=None),
     Column('game_order_id', Integer, ForeignKey('games.id'), nullable=True, default=None, server_default=None),
@@ -91,6 +86,7 @@ def start_mappers() -> None:
         properties={
             '_id': players.c.id,
             '_answer_id': players.c.answer_id,
+            '_connected_at': players.c.connected_at,
             '_game': relationship(
                 models.Game,
                 back_populates='_players',
@@ -190,3 +186,4 @@ def start_mappers() -> None:
 @event.listens_for(models.Game, 'load')
 def on_game_load(game: models.Game, _: Any) -> None:
     game._events: list[Event] = []  # type: ignore
+    game._player_turn_selector = container.player_turn_selector()
