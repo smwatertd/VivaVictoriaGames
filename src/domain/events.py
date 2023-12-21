@@ -63,8 +63,15 @@ class RoundFinished(Event):
     round_number: int
 
 
+class GameResultRow(BaseModel):
+    place: int
+    player_id: int
+    score: int
+
+
 class GameEnded(Event):
     game_id: int
+    results: list[GameResultRow]
 
 
 class DuelRoundStarted(Event):
