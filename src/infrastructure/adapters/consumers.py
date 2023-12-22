@@ -47,7 +47,11 @@ class RabbitMQConsumer(Consumer):
         self._listen_task: asyncio.Task | None = None
 
     async def listen(self, group: str, callback: Callable) -> None:
-        self._connection = await aio_pika.connect(host=self._host, port=self._port, virtualhost=self._virtual_host)
+        self._connection = await aio_pika.connect_robust(
+            host=self._host,
+            port=self._port,
+            virtualhost=self._virtual_host,
+        )
         channel = await self._connection.channel()
         queue = await channel.declare_queue(group, durable=True)
         self._listen_task = asyncio.create_task(queue.consume(partial(self._message_process, callback)))
