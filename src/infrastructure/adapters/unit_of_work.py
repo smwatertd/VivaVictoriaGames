@@ -21,12 +21,13 @@ SQLALCHEMY_DEFAULT_SESSION_FACTORY = async_sessionmaker(
 class SQLAlchemyUnitOfWork(UnitOfWork):
     def __init__(
         self,
+        events_group: str,
         event_producer: Producer,
         serializer: MessageSerializer,
         http_client: HTTPClient,
         session_factory: async_sessionmaker[AsyncSession] = SQLALCHEMY_DEFAULT_SESSION_FACTORY,
     ) -> None:
-        super().__init__(event_producer, serializer)
+        super().__init__(events_group, event_producer, serializer)
         self._http_client = http_client
         self._session_factory = session_factory
 
