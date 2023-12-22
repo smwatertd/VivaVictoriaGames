@@ -39,8 +39,8 @@ class Container(containers.DeclarativeContainer):
         exchange=rabbitmq_settings.exchange,
     )  # type: ignore
 
-    message_consumer: Type[ports.MessageConsumer] = providers.Factory(
-        adapters.RabbitMQMessageConsumer,
+    message_consumer: Type[ports.Consumer] = providers.Factory(
+        adapters.RabbitMQConsumer,
         host=rabbitmq_settings.host,
         port=rabbitmq_settings.port,
         virtual_host=rabbitmq_settings.virtual_host,
@@ -54,8 +54,8 @@ class Container(containers.DeclarativeContainer):
         encoding=redis_settings.default_encoding,
     )  # type: ignore
 
-    chat_message_consumer: Type[ports.ChatMessageConsumer] = providers.Factory(
-        adapters.RedisChatMessageConsumer,
+    chat_message_consumer: Type[ports.Consumer] = providers.Factory(
+        adapters.RedisConsumer,
         host=redis_settings.host,
         port=redis_settings.port,
         db=redis_settings.db,
@@ -87,6 +87,13 @@ class Container(containers.DeclarativeContainer):
 
     player_turn_selector: Type[PlayerTurnSelector] = providers.Factory(
         ConnectionTimeAndIdentityPlayerTurnSelector,
+    )  # type: ignore
+
+    message_handler: Type[adapters.MessageHandler] = providers.Factory(
+        adapters.MessageHandler,
+        messagebus=messagebus,
+        serializer=message_serializer,
+        unit_of_work=unit_of_work,
     )  # type: ignore
 
 
