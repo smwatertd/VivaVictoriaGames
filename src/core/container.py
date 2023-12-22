@@ -63,12 +63,6 @@ class Container(containers.DeclarativeContainer):
         ignore_subscribe_messages=True,
     )  # type: ignore
 
-    messagebus: Type[MessageBus] = providers.Singleton(
-        MessageBus,
-        command_handlers=COMMAND_HANDLERS,
-        event_handlers=EVENT_HANDLERS,
-    )  # type: ignore
-
     http_client: Type[HTTPClient] = providers.Factory(
         HTTPXClient,
     )  # type: ignore
@@ -79,6 +73,13 @@ class Container(containers.DeclarativeContainer):
         chat_message_producer=chat_message_producer,
         serializer=message_serializer,
         http_client=http_client,
+    )  # type: ignore
+
+    messagebus: Type[MessageBus] = providers.Factory(
+        MessageBus,
+        unit_of_work=unit_of_work,
+        command_handlers=COMMAND_HANDLERS,
+        event_handlers=EVENT_HANDLERS,
     )  # type: ignore
 
     channel_layer: Type[adapters.ChannelLayer] = providers.Factory(
@@ -94,7 +95,6 @@ class Container(containers.DeclarativeContainer):
         consumer=message_consumer,
         messagebus=messagebus,
         serializer=message_serializer,
-        unit_of_work=unit_of_work,
     )  # type: ignore
 
 

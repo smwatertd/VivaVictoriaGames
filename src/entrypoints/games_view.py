@@ -26,12 +26,14 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
     async def on_connect(self, websocket: WebSocket) -> None:
         await super().on_connect(websocket)
         self._get_websocket_data(websocket)
-        channel = adapters.Channel(
-            self.data.user_pk,
-            adapters.StarletteWebSocketConnection(websocket),
-            container.chat_message_consumer(),
+        await self.layer.group_add(
+            self.data.game_pk,
+            adapters.Channel(
+                self.data.user_pk,
+                adapters.StarletteWebSocketConnection(websocket),
+                container.chat_message_consumer(),
+            ),
         )
-        await self.layer.group_add(self.data.game_pk, channel)
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         await super().on_disconnect(websocket, close_code)
@@ -39,6 +41,7 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
 
     async def on_receive(self, websocket: WebSocket, data: Any) -> None:
         action, data = self._parse_message(data)
+        # TODO: add allowed actions
         handler = getattr(self, action, self.action_not_allowed)
         await handler(websocket, data)
 
@@ -57,41 +60,47 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
 
 class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
     layer = container.channel_layer()
-    messagebus = container.messagebus()
 
     async def on_connect(self, websocket: WebSocket) -> None:
         await super().on_connect(websocket)
-        command = commands.AddUser(
-            game_pk=self.data.game_pk,
-            user_pk=self.data.user_pk,
-            username=self.data.username,
+        await self._handler_command(
+            commands.AddUser(
+                game_pk=self.data.game_pk,
+                user_pk=self.data.user_pk,
+                username=self.data.username,
+            ),
         )
-        await self.messagebus.handle(command, container.unit_of_work())
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         await super().on_disconnect(websocket, close_code)
-        command = commands.RemoveUser(
-            game_pk=self.data.game_pk,
-            user_pk=self.data.user_pk,
-            username=self.data.username,
+        await self._handler_command(
+            commands.RemoveUser(
+                game_pk=self.data.game_pk,
+                user_pk=self.data.user_pk,
+                username=self.data.username,
+            ),
         )
-        await self.messagebus.handle(command, container.unit_of_work())
 
     async def attack_field(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
-        command = commands.AttackField(
-            game_pk=self.data.game_pk,
-            attacker_pk=self.data.user_pk,
-            field_pk=int(data.get('field_pk', 0)),
+        await self._handler_command(
+            commands.AttackField(
+                game_pk=self.data.game_pk,
+                attacker_pk=self.data.user_pk,
+                field_pk=int(data.get('field_pk', 0)),
+            ),
         )
-        await self.messagebus.handle(command, container.unit_of_work())
 
     async def send_answer(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
-        command = commands.SendAnswer(
-            game_pk=self.data.game_pk,
-            player_pk=self.data.user_pk,
-            answer_pk=int(data.get('answer_pk', 0)),
+        await self._handler_command(
+            commands.SendAnswer(
+                game_pk=self.data.game_pk,
+                player_pk=self.data.user_pk,
+                answer_pk=int(data.get('answer_pk', 0)),
+            ),
         )
-        await self.messagebus.handle(command, container.unit_of_work())
+
+    async def _handler_command(self, command: commands.Command) -> None:
+        await container.messagebus().handle(command)
 
 
 router.add_websocket_route('/ws', GamesWebSocketEndpoint)
