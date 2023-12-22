@@ -1,5 +1,4 @@
 import asyncio
-from typing import Callable, Type
 
 from core.settings import game_settings
 
@@ -74,7 +73,7 @@ async def start_duel_round_timer(event: events.DuelRoundStarted, uow: UnitOfWork
     await asyncio.sleep(game_settings.duel_round_time_seconds)
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.try_finish_duel_round_by_timeout(event.round_number)
+        game.try_finish_duel_round_by_timeout(event.round_number, event.duel_round_number)
         await uow.commit()
 
 
@@ -156,7 +155,7 @@ COMMAND_HANDLERS = {
     commands.SendAnswer: send_answer,
 }
 
-EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
+EVENT_HANDLERS = {
     events.PlayerAdded: [try_start_game],
     # events.PlayerRemoved: [],
 
@@ -173,7 +172,7 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
 
     events.DuelStarted: [select_category],
     events.CategorySetted: [start_duel_round],
-    events.DuelRoundStarted: [start_duel_round_timer, select_question],
+    events.DuelRoundStarted: [select_question, start_duel_round_timer],
     # events.QuestionSetted: [],
     events.PlayerAnswered: [check_are_all_players_answered],
     events.DuelRoundFinished: [check_duel_round_outcome],

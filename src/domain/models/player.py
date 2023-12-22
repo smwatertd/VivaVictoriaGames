@@ -32,7 +32,7 @@ class Player:
 
     def get_answer_id(self) -> int:
         if self._answer_id is None:
-            raise ValueError('Player has not answered yet')
+            return -1
         return self._answer_id
 
     def reset_answer_id(self) -> None:

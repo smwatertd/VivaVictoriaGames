@@ -74,8 +74,8 @@ class Duel:
         return (
             self._round_number == game_settings.duel_max_rounds
             or (
-                self._attacker._answer_id == self._correct_answer_id
-                and self._defender._answer_id != self._correct_answer_id
+                self._attacker.get_answer_id() == self._correct_answer_id
+                and self._defender.get_answer_id() != self._correct_answer_id
             )
             or (
                 self._defender.get_answer_id() == self._correct_answer_id

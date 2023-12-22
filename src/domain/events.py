@@ -78,6 +78,7 @@ class GameEnded(Event):
 class DuelRoundStarted(Event):
     game_id: int
     round_number: int
+    duel_round_number: int
     category_id: int
 
 

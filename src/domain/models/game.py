@@ -121,7 +121,8 @@ class Game(Model):
         self.register_event(
             events.DuelRoundStarted(
                 game_id=self._id,
-                round_number=self._duel.get_round_number(),
+                round_number=self._round_number,
+                duel_round_number=self._duel.get_round_number(),
                 category_id=self._duel.get_category_id(),
             ),
         )
@@ -204,11 +205,15 @@ class Game(Model):
         return self._duel.get_category_id()
 
     def try_finish_round_by_timeout(self, round_number: int) -> None:
-        if self._round_number == round_number:
+        if self._round_number == round_number and self._state == enums.GameState.ATTACK_WAITING:
             self.finish_round()
 
-    def try_finish_duel_round_by_timeout(self, round_number: int) -> None:
-        if self._duel.get_round_number() == round_number:
+    def try_finish_duel_round_by_timeout(self, round_number: int, duel_round_number: int) -> None:
+        if (
+            self._round_number == round_number
+            and self._duel.get_round_number() == duel_round_number
+            and self._state == enums.GameState.DUELING
+        ):
             self.finish_duel_round()
 
     def _increase_round_number(self, value: int = 1) -> None:
