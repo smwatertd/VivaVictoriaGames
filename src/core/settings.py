@@ -60,10 +60,12 @@ class DatabaseSettings(BaseSettings):
 
 
 class GameSettings(BaseSettings):
-    players_count_to_start: int = 3
+    players_count_to_start: int = 2
     fields_count: int = 9
-    max_rounds: int = 10
+    max_rounds: int = 2
     duel_max_rounds: int = 3
+    round_time_seconds: int = 30
+    duel_round_time_seconds: int = 15
 
     model_config = SettingsConfigDict(
         env_file='.env',
