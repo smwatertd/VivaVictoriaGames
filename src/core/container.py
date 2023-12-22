@@ -46,20 +46,12 @@ class Container(containers.DeclarativeContainer):
         virtual_host=rabbitmq_settings.virtual_host,
     )  # type: ignore
 
-    chat_message_producer: Type[ports.Producer] = providers.Factory(
-        adapters.RedisProducer,
-        host=redis_settings.host,
-        port=redis_settings.port,
-        db=redis_settings.db,
-        encoding=redis_settings.default_encoding,
-    )  # type: ignore
-
     chat_message_consumer: Type[ports.Consumer] = providers.Factory(
         adapters.RedisConsumer,
         host=redis_settings.host,
         port=redis_settings.port,
         db=redis_settings.db,
-        encoding=redis_settings.default_encoding,
+        encoding=redis_settings.encoding,
         ignore_subscribe_messages=True,
     )  # type: ignore
 
@@ -70,7 +62,6 @@ class Container(containers.DeclarativeContainer):
     unit_of_work: Type[ports.UnitOfWork] = providers.Factory(
         adapters.SQLAlchemyUnitOfWork,
         event_producer=message_producer,
-        chat_message_producer=chat_message_producer,
         serializer=message_serializer,
         http_client=http_client,
     )  # type: ignore
