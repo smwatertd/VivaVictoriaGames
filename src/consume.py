@@ -7,11 +7,9 @@ from main import app  # noqa
 
 
 async def main() -> None:
-    serializer = container.message_serializer()
-    consumer = container.message_consumer()
-    async for message in consumer.listen(rabbitmq_settings.games_events_queue):
-        await container.messagebus().handle(serializer.deserialize(message), container.unit_of_work())
-        await consumer.commit()
+    message_handler = container.message_handler()
+    await message_handler.start(rabbitmq_settings.games_events_queue)
+    await asyncio.Future()
 
 
 if __name__ == '__main__':

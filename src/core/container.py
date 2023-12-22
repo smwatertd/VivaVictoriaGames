@@ -91,6 +91,7 @@ class Container(containers.DeclarativeContainer):
 
     message_handler: Type[adapters.MessageHandler] = providers.Factory(
         adapters.MessageHandler,
+        consumer=message_consumer,
         messagebus=messagebus,
         serializer=message_serializer,
         unit_of_work=unit_of_work,
