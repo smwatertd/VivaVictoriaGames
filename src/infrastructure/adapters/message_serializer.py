@@ -1,8 +1,7 @@
 from domain.commands import Command
 from domain.events import Event
 
-from infrastructure.adapters.message_types import MessageType
-from infrastructure.adapters.messages import Message
+from infrastructure.adapters.messages import Message, MessageType
 from infrastructure.ports.factory import Factory
 
 from services.exceptions import InvalidMessageType
