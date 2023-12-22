@@ -12,20 +12,19 @@ class AppSettings(BaseSettings):
     )
 
 
-class RedisSettings(BaseSettings):
+class GameMessageBrokerSettings(BaseSettings):
     host: str = 'localhost'
     port: int = 6379
     db: int = 0
-    default_encoding: str = 'utf-8'
-    pool_max_connections: int = 1
+    encoding: str = 'utf-8'
 
     model_config = SettingsConfigDict(
         env_file='.env',
-        env_prefix='REDIS_',
+        env_prefix='GAME_MESSAGE_BROKER_',
     )
 
 
-class RabbitMQSettings(BaseSettings):
+class GameEventMessageBrokerSettings(BaseSettings):
     host: str = 'localhost'
     port: int = 5672
     virtual_host: str = '/'
@@ -83,8 +82,8 @@ class QuestionsSettings(BaseSettings):
 
 
 app_settings = AppSettings()
-redis_settings = RedisSettings()
-rabbitmq_settings = RabbitMQSettings()
+game_message_broker_settings = GameMessageBrokerSettings()
+game_events_message_broker_settings = GameEventMessageBrokerSettings()
 db_settings = DatabaseSettings()
 game_settings = GameSettings()
 questions_settings = QuestionsSettings()
