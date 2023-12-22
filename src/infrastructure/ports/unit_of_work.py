@@ -8,7 +8,6 @@ from domain.events import Event
 from infrastructure.adapters.clients import CategoriesClient, QuestionsClient
 from infrastructure.adapters.message_serializer import MessageSerializer
 from infrastructure.ports import Producer, repositories
-from infrastructure.ports.clients import HTTPClient
 
 
 class UnitOfWork(ABC):
@@ -22,13 +21,9 @@ class UnitOfWork(ABC):
         self,
         event_producer: Producer,
         serializer: MessageSerializer,
-        chat_message_producer: Producer,
-        http_client: HTTPClient,
     ) -> None:
         self._event_producer = event_producer
-        self.serializer = serializer
-        self.chat_message_producer = chat_message_producer
-        self._http_client = http_client
+        self._serializer = serializer
 
     async def __aenter__(self) -> 'UnitOfWork':
         return self
@@ -46,7 +41,7 @@ class UnitOfWork(ABC):
 
     async def publish_events(self) -> None:
         for event in self._collect_events():
-            message = self.serializer.serialize(event)
+            message = self._serializer.serialize(event)
             await self._event_producer.publish(rabbitmq_settings.games_events_queue, message)
 
     def _collect_events(self) -> Generator[Event, None, None]:

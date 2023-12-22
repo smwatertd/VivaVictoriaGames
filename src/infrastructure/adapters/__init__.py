@@ -5,6 +5,6 @@ from infrastructure.adapters.factory import CommandFactory, EventFactory
 from infrastructure.adapters.message_handlers import MessageHandler
 from infrastructure.adapters.message_serializer import MessageSerializer
 from infrastructure.adapters.messages import Message, MessageType
-from infrastructure.adapters.producers import RabbitMQProducer, RedisProducer
+from infrastructure.adapters.producers import RabbitMQProducer
 from infrastructure.adapters.unit_of_work import SQLAlchemyUnitOfWork
 from infrastructure.adapters.websocket_connections import StarletteWebSocketConnection

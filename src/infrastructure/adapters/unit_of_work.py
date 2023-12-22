@@ -23,11 +23,11 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         self,
         event_producer: Producer,
         serializer: MessageSerializer,
-        chat_message_producer: Producer,
         http_client: HTTPClient,
         session_factory: async_sessionmaker[AsyncSession] = SQLALCHEMY_DEFAULT_SESSION_FACTORY,
     ) -> None:
-        super().__init__(event_producer, serializer, chat_message_producer, http_client)
+        super().__init__(event_producer, serializer)
+        self._http_client = http_client
         self._session_factory = session_factory
 
     async def __aenter__(self) -> 'SQLAlchemyUnitOfWork':
