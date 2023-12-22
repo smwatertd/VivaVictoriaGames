@@ -1,6 +1,11 @@
 from dataclasses import dataclass
+from enum import Enum
 
-from infrastructure.adapters.message_types import MessageType
+
+class MessageType(Enum):
+    EVENT = 'event'
+    COMMAND = 'command'
+    UNKNOWN = 'unknown'
 
 
 @dataclass

@@ -9,4 +9,7 @@ class StarletteWebSocketConnection(WebSocketConnection):
         self.websocket: WebSocket
 
     async def send(self, data: dict) -> None:
-        await self.websocket.send_json(data)
+        try:
+            await self.websocket.send_json(data)
+        except RuntimeError:
+            pass

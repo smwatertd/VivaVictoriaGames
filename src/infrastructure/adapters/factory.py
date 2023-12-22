@@ -22,6 +22,8 @@ class EventFactory(Factory):
         'PlayerAnswered': events.PlayerAnswered,
         'GameEnded': events.GameEnded,
         'FieldDefended': events.FieldDefended,
+        'RoundTimerStarted': events.RoundTimerStarted,
+        'DuelRoundTimerStarted': events.DuelRoundTimerStarted,
     }
 
 

@@ -1,10 +1,10 @@
 from infrastructure.adapters.channel_layers import ChannelLayer
 from infrastructure.adapters.channels import Channel
-from infrastructure.adapters.consumers import RabbitMQMessageConsumer, RedisChatMessageConsumer
+from infrastructure.adapters.consumers import RabbitMQConsumer, RedisConsumer
 from infrastructure.adapters.factory import CommandFactory, EventFactory
+from infrastructure.adapters.message_handlers import MessageHandler
 from infrastructure.adapters.message_serializer import MessageSerializer
-from infrastructure.adapters.message_types import MessageType
-from infrastructure.adapters.messages import Message
-from infrastructure.adapters.producers import RabbitMQProducer, RedisProducer
+from infrastructure.adapters.messages import Message, MessageType
+from infrastructure.adapters.producers import RabbitMQProducer
 from infrastructure.adapters.unit_of_work import SQLAlchemyUnitOfWork
 from infrastructure.adapters.websocket_connections import StarletteWebSocketConnection

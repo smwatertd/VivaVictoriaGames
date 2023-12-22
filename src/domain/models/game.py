@@ -121,7 +121,8 @@ class Game(Model):
         self.register_event(
             events.DuelRoundStarted(
                 game_id=self._id,
-                round_number=self._duel.get_round_number(),
+                round_number=self._round_number,
+                duel_round_number=self._duel.get_round_number(),
                 category_id=self._duel.get_category_id(),
             ),
         )
@@ -202,6 +203,37 @@ class Game(Model):
 
     def get_duel_category(self) -> int:
         return self._duel.get_category_id()
+
+    def try_finish_round_by_timeout(self, round_number: int) -> None:
+        if self._round_number == round_number and self._state == enums.GameState.ATTACK_WAITING:
+            self.finish_round()
+
+    def try_finish_duel_round_by_timeout(self, round_number: int, duel_round_number: int) -> None:
+        if (
+            self._round_number == round_number
+            and self._duel.get_round_number() == duel_round_number
+            and self._state == enums.GameState.DUELING
+        ):
+            self.finish_duel_round()
+
+    def start_round_timer(self) -> None:
+        self.register_event(
+            events.RoundTimerStarted(
+                game_id=self._id,
+                round_number=self._round_number,
+                duration=game_settings.round_time_seconds,
+            ),
+        )
+
+    def start_duel_round_timer(self) -> None:
+        self.register_event(
+            events.DuelRoundTimerStarted(
+                game_id=self._id,
+                round_number=self._round_number,
+                duel_round_number=self._duel.get_round_number(),
+                duration=game_settings.duel_round_time_seconds,
+            ),
+        )
 
     def _increase_round_number(self, value: int = 1) -> None:
         self._round_number += value

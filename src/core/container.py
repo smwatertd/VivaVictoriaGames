@@ -1,6 +1,6 @@
 from typing import Type
 
-from core.settings import rabbitmq_settings, redis_settings
+from core.settings import game_events_message_broker_settings, game_message_broker_settings
 
 from dependency_injector import containers, providers
 
@@ -33,40 +33,26 @@ class Container(containers.DeclarativeContainer):
 
     message_producer: Type[ports.Producer] = providers.Factory(
         adapters.RabbitMQProducer,
-        host=rabbitmq_settings.host,
-        port=rabbitmq_settings.port,
-        virtual_host=rabbitmq_settings.virtual_host,
-        exchange=rabbitmq_settings.exchange,
+        host=game_events_message_broker_settings.host,
+        port=game_events_message_broker_settings.port,
+        virtual_host=game_events_message_broker_settings.virtual_host,
+        exchange=game_events_message_broker_settings.exchange,
     )  # type: ignore
 
-    message_consumer: Type[ports.MessageConsumer] = providers.Factory(
-        adapters.RabbitMQMessageConsumer,
-        host=rabbitmq_settings.host,
-        port=rabbitmq_settings.port,
-        virtual_host=rabbitmq_settings.virtual_host,
+    message_consumer: Type[ports.Consumer] = providers.Factory(
+        adapters.RabbitMQConsumer,
+        host=game_events_message_broker_settings.host,
+        port=game_events_message_broker_settings.port,
+        virtual_host=game_events_message_broker_settings.virtual_host,
     )  # type: ignore
 
-    chat_message_producer: Type[ports.Producer] = providers.Factory(
-        adapters.RedisProducer,
-        host=redis_settings.host,
-        port=redis_settings.port,
-        db=redis_settings.db,
-        encoding=redis_settings.default_encoding,
-    )  # type: ignore
-
-    chat_message_consumer: Type[ports.ChatMessageConsumer] = providers.Factory(
-        adapters.RedisChatMessageConsumer,
-        host=redis_settings.host,
-        port=redis_settings.port,
-        db=redis_settings.db,
-        encoding=redis_settings.default_encoding,
+    chat_message_consumer: Type[ports.Consumer] = providers.Factory(
+        adapters.RedisConsumer,
+        host=game_message_broker_settings.host,
+        port=game_message_broker_settings.port,
+        db=game_message_broker_settings.db,
+        encoding=game_message_broker_settings.encoding,
         ignore_subscribe_messages=True,
-    )  # type: ignore
-
-    messagebus: Type[MessageBus] = providers.Singleton(
-        MessageBus,
-        command_handlers=COMMAND_HANDLERS,
-        event_handlers=EVENT_HANDLERS,
     )  # type: ignore
 
     http_client: Type[HTTPClient] = providers.Factory(
@@ -75,10 +61,17 @@ class Container(containers.DeclarativeContainer):
 
     unit_of_work: Type[ports.UnitOfWork] = providers.Factory(
         adapters.SQLAlchemyUnitOfWork,
+        events_group=game_events_message_broker_settings.games_events_queue,
         event_producer=message_producer,
-        chat_message_producer=chat_message_producer,
         serializer=message_serializer,
         http_client=http_client,
+    )  # type: ignore
+
+    messagebus: Type[MessageBus] = providers.Factory(
+        MessageBus,
+        unit_of_work=unit_of_work,
+        command_handlers=COMMAND_HANDLERS,
+        event_handlers=EVENT_HANDLERS,
     )  # type: ignore
 
     channel_layer: Type[adapters.ChannelLayer] = providers.Factory(
@@ -87,6 +80,14 @@ class Container(containers.DeclarativeContainer):
 
     player_turn_selector: Type[PlayerTurnSelector] = providers.Factory(
         ConnectionTimeAndIdentityPlayerTurnSelector,
+    )  # type: ignore
+
+    message_handler: Type[adapters.MessageHandler] = providers.Factory(
+        adapters.MessageHandler,
+        events_group=game_events_message_broker_settings.games_events_queue,
+        consumer=message_consumer,
+        messagebus=messagebus,
+        serializer=message_serializer,
     )  # type: ignore
 
 

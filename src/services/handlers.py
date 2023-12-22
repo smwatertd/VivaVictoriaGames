@@ -1,4 +1,4 @@
-from typing import Callable, Type
+import asyncio
 
 from domain import commands, events
 
@@ -54,9 +54,9 @@ async def start_round(event: events.GameStarted, uow: UnitOfWork) -> None:
 
 async def start_round_timer(event: events.RoundStarted, uow: UnitOfWork) -> None:
     async with uow:
-        pass
-        # game = await uow.games.get(event.game_id)
-        # await uow.commit()
+        game = await uow.games.get(event.game_id)
+        game.start_round_timer()
+        await uow.commit()
 
 
 async def check_round_outcome(event: events.RoundFinished, uow: UnitOfWork) -> None:
@@ -68,9 +68,9 @@ async def check_round_outcome(event: events.RoundFinished, uow: UnitOfWork) -> N
 
 async def start_duel_round_timer(event: events.DuelRoundStarted, uow: UnitOfWork) -> None:
     async with uow:
-        pass
-        # game = await uow.games.get(event.game_id)
-        # await uow.commit()
+        game = await uow.games.get(event.game_id)
+        game.start_duel_round_timer()
+        await uow.commit()
 
 
 async def finish_round(event: events.FieldCaptured, uow: UnitOfWork) -> None:
@@ -144,6 +144,22 @@ async def check_attack_outcome(event: events.FieldAttacked, uow: UnitOfWork) -> 
         await uow.commit()
 
 
+async def wait_round_timer(event: events.RoundTimerStarted, uow: UnitOfWork) -> None:
+    await asyncio.sleep(event.duration)
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.try_finish_round_by_timeout(event.round_number)
+        await uow.commit()
+
+
+async def wait_duel_round_timer(event: events.DuelRoundTimerStarted, uow: UnitOfWork) -> None:
+    await asyncio.sleep(event.duration)
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.try_finish_duel_round_by_timeout(event.round_number, event.duel_round_number)
+        await uow.commit()
+
+
 COMMAND_HANDLERS = {
     commands.AddUser: add_game_player,
     commands.RemoveUser: remove_game_player,
@@ -151,15 +167,15 @@ COMMAND_HANDLERS = {
     commands.SendAnswer: send_answer,
 }
 
-EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
+EVENT_HANDLERS = {
     events.PlayerAdded: [try_start_game],
     # events.PlayerRemoved: [],
 
     events.GameStarted: [start_round],
     # events.GameEnded: [],
 
-    # events.RoundStarted: [],
-    # events.RoundStarted: [, start_round_timer],
+    events.RoundStarted: [start_round_timer],
+    events.RoundTimerStarted: [wait_round_timer],
     events.FieldAttacked: [check_attack_outcome],
     events.PlayerFieldAttacked: [start_duel],
     events.FieldCaptured: [finish_round],
@@ -168,9 +184,8 @@ EVENT_HANDLERS: dict[Type[events.Event], list[Callable]] = {
 
     events.DuelStarted: [select_category],
     events.CategorySetted: [start_duel_round],
-    events.DuelRoundStarted: [select_question],
-    # events.DuelRoundStarted: [, select_category, start_duel_round_timer],
-    # events.QuestionSetted: [],
+    events.DuelRoundStarted: [select_question, start_duel_round_timer],
+    events.DuelRoundTimerStarted: [wait_duel_round_timer],
     events.PlayerAnswered: [check_are_all_players_answered],
     events.DuelRoundFinished: [check_duel_round_outcome],
     events.DuelEnded: [check_duel_results],
