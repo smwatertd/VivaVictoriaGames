@@ -9,7 +9,9 @@ class Model:
         self._events.append(event)
 
     def collect_events(self) -> list[Event]:
-        return self._events
+        events = self._events
+        self.clear_events()
+        return events
 
     def clear_events(self) -> None:
         self._set_events_default()
