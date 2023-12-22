@@ -1,6 +1,6 @@
 from typing import Type
 
-from core.settings import rabbitmq_settings, redis_settings
+from core.settings import game_events_message_broker_settings, game_message_broker_settings
 
 from dependency_injector import containers, providers
 
@@ -33,25 +33,25 @@ class Container(containers.DeclarativeContainer):
 
     message_producer: Type[ports.Producer] = providers.Factory(
         adapters.RabbitMQProducer,
-        host=rabbitmq_settings.host,
-        port=rabbitmq_settings.port,
-        virtual_host=rabbitmq_settings.virtual_host,
-        exchange=rabbitmq_settings.exchange,
+        host=game_events_message_broker_settings.host,
+        port=game_events_message_broker_settings.port,
+        virtual_host=game_events_message_broker_settings.virtual_host,
+        exchange=game_events_message_broker_settings.exchange,
     )  # type: ignore
 
     message_consumer: Type[ports.Consumer] = providers.Factory(
         adapters.RabbitMQConsumer,
-        host=rabbitmq_settings.host,
-        port=rabbitmq_settings.port,
-        virtual_host=rabbitmq_settings.virtual_host,
+        host=game_events_message_broker_settings.host,
+        port=game_events_message_broker_settings.port,
+        virtual_host=game_events_message_broker_settings.virtual_host,
     )  # type: ignore
 
     chat_message_consumer: Type[ports.Consumer] = providers.Factory(
         adapters.RedisConsumer,
-        host=redis_settings.host,
-        port=redis_settings.port,
-        db=redis_settings.db,
-        encoding=redis_settings.encoding,
+        host=game_message_broker_settings.host,
+        port=game_message_broker_settings.port,
+        db=game_message_broker_settings.db,
+        encoding=game_message_broker_settings.encoding,
         ignore_subscribe_messages=True,
     )  # type: ignore
 
@@ -61,6 +61,7 @@ class Container(containers.DeclarativeContainer):
 
     unit_of_work: Type[ports.UnitOfWork] = providers.Factory(
         adapters.SQLAlchemyUnitOfWork,
+        events_group=game_events_message_broker_settings.games_events_queue,
         event_producer=message_producer,
         serializer=message_serializer,
         http_client=http_client,
@@ -83,6 +84,7 @@ class Container(containers.DeclarativeContainer):
 
     message_handler: Type[adapters.MessageHandler] = providers.Factory(
         adapters.MessageHandler,
+        events_group=game_events_message_broker_settings.games_events_queue,
         consumer=message_consumer,
         messagebus=messagebus,
         serializer=message_serializer,

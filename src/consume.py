@@ -1,14 +1,13 @@
 import asyncio
 
 from core.container import container
-from core.settings import rabbitmq_settings
 
 from main import app  # noqa
 
 
 async def main() -> None:
     message_handler = container.message_handler()
-    await message_handler.start(rabbitmq_settings.games_events_queue)
+    await message_handler.start()
     await asyncio.Future()
 
 
