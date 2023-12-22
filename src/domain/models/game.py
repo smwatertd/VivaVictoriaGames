@@ -203,6 +203,14 @@ class Game(Model):
     def get_duel_category(self) -> int:
         return self._duel.get_category_id()
 
+    def try_finish_round_by_timeout(self, round_number: int) -> None:
+        if self._round_number == round_number:
+            self.finish_round()
+
+    def try_finish_duel_round_by_timeout(self, round_number: int) -> None:
+        if self._duel.get_round_number() == round_number:
+            self.finish_duel_round()
+
     def _increase_round_number(self, value: int = 1) -> None:
         self._round_number += value
 
