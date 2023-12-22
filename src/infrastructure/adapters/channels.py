@@ -1,35 +1,41 @@
 import asyncio
 
 from infrastructure import ports
+from infrastructure.adapters.messages import Message
 
 
-class Channel(ports.AbstractChannel):
+class Channel:
     def __init__(
         self,
         id: str,
         websocket: ports.WebSocketConnection,
-        chat_message_consumer: ports.ChatMessageConsumer,
+        chat_message_consumer: ports.Consumer,
     ) -> None:
-        super().__init__(id, websocket)
+        self._id = id
+        self._websocket = websocket
         self._chat_message_consumer = chat_message_consumer
-        self._wait_for_message_task: asyncio.Task | None = None
+        self._listen_task: asyncio.Task | None = None
 
-    async def wait_for_message(self) -> None:
-        self._wait_for_message_task = asyncio.ensure_future(self._wait_for_message())
+    def __eq__(self, __value: object) -> bool:
+        if not isinstance(__value, Channel):
+            return False
+        return self._id == __value._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
+
+    def get_id(self) -> str:
+        return self._id
 
     async def subscribe(self, group: str) -> None:
-        await self._chat_message_consumer.subscribe(group)
+        await self._chat_message_consumer.listen(group, self.send_message)
 
-    async def unsubscribe(self, group: str) -> None:
-        if self._wait_for_message_task is None:
-            raise ValueError('Channel is not subscribed')
-        self._wait_for_message_task.cancel()
-        await self._chat_message_consumer.unsubscribe(group)
+    async def unsubscribe(self) -> None:
+        await self._chat_message_consumer.stop_listen()
 
-    async def _wait_for_message(self) -> None:
-        async for message in self._chat_message_consumer.listen():
-            await self._websocket.send({
-                'type': message.type.value,
-                'payload_type': message.payload_type,
-                'payload': message.payload,
-            })
+    async def send_message(self, message: Message) -> None:
+        await self._websocket.send({
+            'type': message.type.value,
+            'payload_type': message.payload_type,
+            'payload': message.payload,
+        })
