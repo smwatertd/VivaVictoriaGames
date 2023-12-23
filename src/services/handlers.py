@@ -1,6 +1,8 @@
 import asyncio
 
-from domain import commands, events
+from domain import events
+
+from entrypoints import commands
 
 from infrastructure.ports import UnitOfWork
 

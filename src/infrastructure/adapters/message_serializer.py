@@ -1,5 +1,6 @@
-from domain.commands import Command
 from domain.events import Event
+
+from entrypoints.commands import Command
 
 from infrastructure.adapters.messages import Message, MessageType
 from infrastructure.ports.factory import Factory

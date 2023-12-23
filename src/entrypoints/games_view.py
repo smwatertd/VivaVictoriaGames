@@ -2,9 +2,7 @@ from typing import Any
 
 from core.container import container
 
-from domain import commands
-
-from entrypoints.schemas import GamesConnectionSchema
+from entrypoints import commands, schemas
 
 from fastapi import APIRouter
 
@@ -55,7 +53,7 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
         game = websocket.query_params.get('game', '1')[-1]
         username = websocket.query_params.get('username', 'anonymous')
         user_pk = username[-1]
-        self.data = GamesConnectionSchema(game_pk=int(game), user_pk=int(user_pk), username=username)
+        self.data = schemas.GamesConnectionSchema(game_pk=int(game), user_pk=int(user_pk), username=username)
 
 
 class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
