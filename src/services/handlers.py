@@ -2,9 +2,9 @@ import asyncio
 
 from domain import events
 
-from entrypoints import commands
-
 from infrastructure.ports import UnitOfWork
+
+from services import commands
 
 
 async def add_game_player(command: commands.AddUser, uow: UnitOfWork) -> None:

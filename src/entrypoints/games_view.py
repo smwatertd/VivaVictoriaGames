@@ -2,11 +2,13 @@ from typing import Any
 
 from core.container import container
 
-from entrypoints import commands, schemas
+from entrypoints import schemas
 
 from fastapi import APIRouter
 
 from infrastructure import adapters
+
+from services import commands
 
 from starlette.endpoints import WebSocketEndpoint
 from starlette.websockets import WebSocket

@@ -2,10 +2,9 @@ from typing import Callable, Coroutine, Iterable, Type
 
 from domain.events import Event
 
-from entrypoints.commands import Command
-
 from infrastructure.ports import UnitOfWork
 
+from services.commands import Command
 from services.exceptions import InvalidMessageType
 
 
