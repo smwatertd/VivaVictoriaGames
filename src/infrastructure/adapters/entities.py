@@ -18,6 +18,7 @@ games = Table(
     Column('id', Integer, primary_key=True),
     Column('state', Enum(enums.GameState), default=enums.GameState.PLAYERS_WAITING, nullable=False),
     Column('round_number', Integer, default=0, server_default='0'),
+    Column('creator_id', Integer, default=None, server_default=None),
 )
 
 duels = Table(
