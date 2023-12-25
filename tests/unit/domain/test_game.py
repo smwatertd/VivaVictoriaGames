@@ -222,6 +222,27 @@ class TestGame:
             in duel_processing_game._events
         )
 
+    def test_set_duel_question_question_setted(
+        self,
+        duel_processing_game: Game,
+        question: int,
+        mock_duel: Duel,
+    ) -> None:
+        duel_processing_game._duel = mock_duel
+
+        assert mock_duel.set_question.called_once_with(question)
+
+    def test_set_duel_question_event_registered(self, question: int, duel_processing_game: Game) -> None:
+        duel_processing_game.set_duel_question(question)
+
+        assert (
+            events.QuestionSetted(
+                game_id=duel_processing_game._id,
+                question_id=question,
+            )
+            in duel_processing_game._events
+        )
+
     def _get_game_order(self, game: Game) -> list[Player]:
         return game._player_turn_selector.get_order(game._players)
 

@@ -49,6 +49,11 @@ def category() -> int:
 
 
 @pytest.fixture
+def question() -> int:
+    return 1
+
+
+@pytest.fixture
 def empty_game() -> Game:
     return Game(
         id=1,
