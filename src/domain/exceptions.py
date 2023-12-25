@@ -31,19 +31,3 @@ class FieldAlreadyOwned(AttackFieldError):
 
 class NotYourTurn(AttackFieldError):
     pass
-
-
-# class NotYourTurn(AttackFieldError):
-#     pass
-
-
-# class FieldNotFound(AttackFieldError):
-#     pass
-
-
-# class AlreadyOwned(AttackFieldError):
-#     pass
-
-
-# class PlayerNotFound(AttackFieldError):
-#     pass
