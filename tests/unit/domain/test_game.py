@@ -1,6 +1,6 @@
 from domain import events, exceptions
 from domain.enums import GameState
-from domain.models import Duel, Game, Player
+from domain.models import Game, Player
 
 import pytest
 
@@ -173,10 +173,9 @@ class TestGame:
 
         assert round_processing_game._state == GameState.DUELING
 
-    def test_start_duel_event_registered(self, round_processing_game: Game, mock_duel: Duel) -> None:
+    def test_start_duel_event_registered(self, round_processing_game: Game) -> None:
         attacker = round_processing_game._player_order
         defender = self._get_not_player_order(round_processing_game)
-        round_processing_game._duel = mock_duel
         field = round_processing_game._fields[0]
 
         round_processing_game.start_duel(attacker, defender, field)
@@ -191,27 +190,19 @@ class TestGame:
             in round_processing_game._events
         )
 
-    def test_start_duel_duel_started(self, round_processing_game: Game, mock_duel: Duel) -> None:
+    def test_start_duel_duel_started(self, round_processing_game: Game) -> None:
         attacker = round_processing_game._player_order
         defender = self._get_not_player_order(round_processing_game)
-        round_processing_game._duel = mock_duel
         field = round_processing_game._fields[0]
 
         round_processing_game.start_duel(attacker, defender, field)
 
-        assert mock_duel.start.called_once_with(attacker, defender, field)
+        round_processing_game._duel.start.assert_called_once_with(attacker, defender, field)
 
-    def test_set_duel_category_category_setted(
-        self,
-        duel_processing_game: Game,
-        category: int,
-        mock_duel: Duel,
-    ) -> None:
-        duel_processing_game._duel = mock_duel
-
+    def test_set_duel_category_category_setted(self, duel_processing_game: Game, category: int) -> None:
         duel_processing_game.set_duel_category(category)
 
-        assert mock_duel.set_category.called_once_with(category)
+        duel_processing_game._duel.set_category.assert_called_once_with(category)
 
     def test_set_duel_category_event_registered(self, category: int, duel_processing_game: Game) -> None:
         duel_processing_game.set_duel_category(category)
@@ -224,19 +215,12 @@ class TestGame:
             in duel_processing_game._events
         )
 
-    def test_set_duel_question_question_setted(
-        self,
-        duel_processing_game: Game,
-        question: int,
-        mock_duel: Duel,
-    ) -> None:
-        duel_processing_game._duel = mock_duel
-
+    def test_set_duel_question_question_setted(self, duel_processing_game: Game, question: int) -> None:
         duel_processing_game.set_duel_question(question)
 
-        assert mock_duel.set_question.called_once_with(question)
+        duel_processing_game._duel.set_question.assert_called_once_with(question)
 
-    def test_set_duel_question_event_registered(self, question: int, duel_processing_game: Game) -> None:
+    def test_set_duel_question_event_registered(self, duel_processing_game: Game, question: int) -> None:
         duel_processing_game.set_duel_question(question)
 
         assert (
@@ -247,16 +231,16 @@ class TestGame:
             in duel_processing_game._events
         )
 
-    def test_set_player_answer_answer_setted(self, duel_processing_game: Game, answer: int, mock_duel: Duel) -> None:
+    def test_set_player_answer_answer_setted(self, duel_processing_game: Game, answer: int) -> None:
         player = duel_processing_game._player_order
-        duel_processing_game._duel = mock_duel
 
         duel_processing_game.set_player_answer(player, answer)
 
-        assert mock_duel.set_player_answer.called_once_with(player, answer)
+        duel_processing_game._duel.set_player_answer.assert_called_once_with(player, answer)
 
-    def test_set_player_answer_event_registered(self, answer: int, duel_processing_game: Game) -> None:
+    def test_set_player_answer_event_registered(self, duel_processing_game: Game, answer: int) -> None:
         player = duel_processing_game._player_order
+
         duel_processing_game.set_player_answer(player, answer)
 
         assert (

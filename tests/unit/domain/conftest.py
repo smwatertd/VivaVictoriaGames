@@ -30,17 +30,12 @@ def fields() -> list[Field]:
 
 @pytest.fixture
 def duel() -> Duel:
-    return Duel(id=1, round_number=0, attacker=None, defender=None, field=None, category_id=None, question_id=None)
+    return MagicMock(spec=Duel)
 
 
 @pytest.fixture
 def player_turn_selector() -> PlayerTurnSelector:
     return FakePlayerTurnSelector()
-
-
-@pytest.fixture
-def mock_duel() -> Duel:
-    return MagicMock(spec=Duel)
 
 
 @pytest.fixture
@@ -140,10 +135,6 @@ def duel_processing_game(
     duel: Duel,
     player_turn_selector: PlayerTurnSelector,
 ) -> Game:
-    # duel._attacker = players[0]
-    # duel._defender = players[1]
-    # duel._field = fields[0]
-    # duel._round_number = 1
     return Game(
         id=1,
         state=GameState.DUELING,
