@@ -81,13 +81,29 @@ class TestGame:
     def test_try_start_event_registered(self, ready_to_start_game: Game) -> None:
         ready_to_start_game.try_start()
 
+        order = [events.OrderPlayer(id=player._id) for player in self._get_game_order(ready_to_start_game)]
+        assert events.GameStarted(game_id=ready_to_start_game._id, order=order) in ready_to_start_game._events
+
+    def test_start_round_state_setted(self, started_game: Game) -> None:
+        started_game.start_round()
+
+        assert started_game._state == GameState.ATTACK_WAITING
+
+    def test_start_round_event_registered(self, started_game: Game) -> None:
+        started_game.start_round()
+
+        player_order = self._get_game_player_order(started_game)
         assert (
-            events.GameStarted(
-                game_id=ready_to_start_game._id,
-                order=[
-                    events.OrderPlayer(id=player._id)
-                    for player in ready_to_start_game._player_turn_selector.get_order(ready_to_start_game._players)
-                ],
+            events.RoundStarted(
+                game_id=started_game._id,
+                round_number=started_game._round_number,
+                player_order_id=player_order._id,
             )
-            in ready_to_start_game._events
+            in started_game._events
         )
+
+    def _get_game_order(self, game: Game) -> list[Player]:
+        return game._player_turn_selector.get_order(game._players)
+
+    def _get_game_player_order(self, game: Game) -> Player:
+        return game._player_turn_selector.select(game._round_number, game._players)

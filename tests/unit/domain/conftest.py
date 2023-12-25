@@ -34,16 +34,16 @@ def empty_game() -> Game:
 
 
 @pytest.fixture
-def started_game() -> Game:
+def started_game(player: Player, player_turn_selector: PlayerTurnSelector) -> Game:
     return Game(
         id=1,
         state=GameState.IN_PROCESS,
         round_number=0,
         player_order=None,
-        players=[],
+        players=[player] * game_settings.players_count_to_start,
         fields=[],
         duel=None,
-        player_turn_selector=None,
+        player_turn_selector=player_turn_selector,
     )
 
 

@@ -55,20 +55,7 @@ class Game(Model):
 
     def try_start(self) -> None:
         if self.is_full():
-            self.start()
-
-    def start(self) -> None:
-        self._round_number = 1
-        self._state = enums.GameState.IN_PROCESS
-        self.register_event(
-            events.GameStarted(
-                game_id=self.get_id(),
-                order=[
-                    events.OrderPlayer(id=player.get_id())
-                    for player in self._player_turn_selector.get_order(self._players)
-                ],
-            ),
-        )
+            self._start()
 
     def start_round(self) -> None:
         self._state = enums.GameState.ATTACK_WAITING
@@ -254,6 +241,19 @@ class Game(Model):
                 game_id=self.get_id(),
                 player_id=player.get_id(),
                 connected_players=[events.ConnectedPlayer(id=player.get_id())],
+            ),
+        )
+
+    def _start(self) -> None:
+        self._round_number = 1
+        self._state = enums.GameState.IN_PROCESS
+        self.register_event(
+            events.GameStarted(
+                game_id=self.get_id(),
+                order=[
+                    events.OrderPlayer(id=player.get_id())
+                    for player in self._player_turn_selector.get_order(self._players)
+                ],
             ),
         )
 
