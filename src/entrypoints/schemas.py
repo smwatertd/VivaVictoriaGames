@@ -15,3 +15,7 @@ class GamesConnectionSchema(BaseModel):
 
 class CreateGameSchema(BaseModel):
     creator_id: int
+
+
+class AvailableGame(BaseModel):
+    id: int
