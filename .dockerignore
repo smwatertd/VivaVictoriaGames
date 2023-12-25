@@ -8,3 +8,4 @@ migrations
 Makefile
 README.md
 .env
+docker
