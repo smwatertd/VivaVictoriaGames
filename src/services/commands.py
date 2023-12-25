@@ -27,3 +27,7 @@ class SendAnswer(Command):
     game_pk: int
     player_pk: int
     answer_pk: int
+
+
+class CreateGame(Command):
+    creator_id: int
