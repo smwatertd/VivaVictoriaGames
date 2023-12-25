@@ -209,6 +209,8 @@ class TestGame:
     ) -> None:
         duel_processing_game._duel = mock_duel
 
+        duel_processing_game.set_duel_category(category)
+
         assert mock_duel.set_category.called_once_with(category)
 
     def test_set_duel_category_event_registered(self, category: int, duel_processing_game: Game) -> None:
@@ -230,6 +232,8 @@ class TestGame:
     ) -> None:
         duel_processing_game._duel = mock_duel
 
+        duel_processing_game.set_duel_question(question)
+
         assert mock_duel.set_question.called_once_with(question)
 
     def test_set_duel_question_event_registered(self, question: int, duel_processing_game: Game) -> None:
@@ -239,6 +243,26 @@ class TestGame:
             events.QuestionSetted(
                 game_id=duel_processing_game._id,
                 question_id=question,
+            )
+            in duel_processing_game._events
+        )
+
+    def test_set_player_answer_answer_setted(self, duel_processing_game: Game, answer: int, mock_duel: Duel) -> None:
+        player = duel_processing_game._player_order
+        duel_processing_game._duel = mock_duel
+
+        duel_processing_game.set_player_answer(player, answer)
+
+        assert mock_duel.set_player_answer.called_once_with(player, answer)
+
+    def test_set_player_answer_event_registered(self, answer: int, duel_processing_game: Game) -> None:
+        player = duel_processing_game._player_order
+        duel_processing_game.set_player_answer(player, answer)
+
+        assert (
+            events.PlayerAnswered(
+                game_id=duel_processing_game._id,
+                player_id=player._id,
             )
             in duel_processing_game._events
         )

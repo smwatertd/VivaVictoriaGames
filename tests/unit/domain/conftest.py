@@ -54,6 +54,11 @@ def question() -> int:
 
 
 @pytest.fixture
+def answer() -> int:
+    return 1
+
+
+@pytest.fixture
 def empty_game() -> Game:
     return Game(
         id=1,

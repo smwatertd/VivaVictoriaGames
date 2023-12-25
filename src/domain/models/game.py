@@ -62,7 +62,7 @@ class Game(Model):
         self._player_order = self._player_turn_selector.select(self._round_number, self._players)
         self.register_event(
             events.RoundStarted(
-                game_id=self._id,
+                game_id=self.get_id(),
                 round_number=self._round_number,
                 player_order_id=self._player_order.get_id(),
             ),
@@ -70,7 +70,7 @@ class Game(Model):
 
     def finish_round(self) -> None:
         self._state = enums.GameState.IN_PROCESS
-        self.register_event(events.RoundFinished(game_id=self._id, round_number=self._round_number))
+        self.register_event(events.RoundFinished(game_id=self.get_id(), round_number=self._round_number))
 
     def attack_field(self, player: Player, field: Field) -> None:
         self._ensure_can_attack_field(player, field)
@@ -81,7 +81,7 @@ class Game(Model):
         self._duel.start(attacker, defender, field)
         self.register_event(
             events.DuelStarted(
-                game_id=self._id,
+                game_id=self.get_id(),
                 attacker_id=attacker.get_id(),
                 defender_id=defender.get_id(),
                 field_id=field.get_id(),
@@ -90,29 +90,26 @@ class Game(Model):
 
     def set_duel_category(self, category_id: int) -> None:
         self._duel.set_category(category_id)
-        self.register_event(events.CategorySetted(game_id=self._id, category_id=category_id))
+        self.register_event(events.CategorySetted(game_id=self.get_id(), category_id=category_id))
 
     def set_duel_question(self, question_id: int) -> None:
         self._duel.set_question(question_id)
-        self.register_event(events.QuestionSetted(game_id=self._id, question_id=question_id))
+        self.register_event(events.QuestionSetted(game_id=self.get_id(), question_id=question_id))
 
     def set_player_answer(self, player: Player, answer_id: int) -> None:
         self._duel.set_player_answer(player, answer_id)
-        self.register_event(events.PlayerAnswered(game_id=self._id, player_id=player.get_id()))
-
-    def are_all_players_answered(self) -> bool:
-        return self._duel.are_all_players_answered()
+        self.register_event(events.PlayerAnswered(game_id=self.get_id(), player_id=player.get_id()))
 
     def finish_duel(self) -> None:
         self._state = enums.GameState.IN_PROCESS
         self._duel.finish()
-        self.register_event(events.DuelEnded(game_id=self._id))
+        self.register_event(events.DuelEnded(game_id=self.get_id()))
 
     def start_duel_round(self) -> None:
         self._duel.start_round()
         self.register_event(
             events.DuelRoundStarted(
-                game_id=self._id,
+                game_id=self.get_id(),
                 round_number=self._round_number,
                 duel_round_number=self._duel.get_round_number(),
                 category_id=self._duel.get_category_id(),
@@ -127,7 +124,7 @@ class Game(Model):
         )
         self.register_event(
             events.GameEnded(
-                game_id=self._id,
+                game_id=self.get_id(),
                 results=[
                     events.GameResultRow(place=place, player_id=player_id, score=score)
                     for place, (player_id, score) in enumerate(sorted_scores, start=1)
@@ -136,7 +133,7 @@ class Game(Model):
         )
 
     def try_finish_duel_round(self) -> None:
-        if self.are_all_players_answered():
+        if self._duel.are_all_players_answered():
             self.finish_duel_round()
 
     def set_duel_correct_answer(self, answer_id: int) -> None:
@@ -146,7 +143,7 @@ class Game(Model):
         self._duel.finish_round()
         self.register_event(
             events.DuelRoundFinished(
-                game_id=self._id,
+                game_id=self.get_id(),
                 round_number=self._duel.get_round_number(),
                 correct_answer_id=self._duel.get_correct_answer_id(),
             ),
@@ -158,7 +155,7 @@ class Game(Model):
             attacker = self._duel.get_attacker()
             self.register_event(
                 events.FieldCaptured(
-                    game_id=self._id,
+                    game_id=self.get_id(),
                     field_id=field.get_id(),
                     capturer_id=attacker.get_id(),
                     new_field_value=field.get_value(),
@@ -167,7 +164,7 @@ class Game(Model):
         else:
             self.register_event(
                 events.FieldDefended(
-                    game_id=self._id,
+                    game_id=self.get_id(),
                     field_id=field.get_id(),
                     new_field_value=field.get_value(),
                 ),
@@ -211,7 +208,7 @@ class Game(Model):
     def start_round_timer(self) -> None:
         self.register_event(
             events.RoundTimerStarted(
-                game_id=self._id,
+                game_id=self.get_id(),
                 round_number=self._round_number,
                 duration=game_settings.round_time_seconds,
             ),
@@ -220,7 +217,7 @@ class Game(Model):
     def start_duel_round_timer(self) -> None:
         self.register_event(
             events.DuelRoundTimerStarted(
-                game_id=self._id,
+                game_id=self.get_id(),
                 round_number=self._round_number,
                 duel_round_number=self._duel.get_round_number(),
                 duration=game_settings.duel_round_time_seconds,
@@ -272,7 +269,7 @@ class Game(Model):
     def _attack_field(self, player: Player, field: Field) -> None:
         self.register_event(
             events.FieldAttacked(
-                game_id=self._id,
+                game_id=self.get_id(),
                 attacker_id=player.get_id(),
                 field_id=field.get_id(),
             ),
@@ -285,7 +282,7 @@ class Game(Model):
         field.set_owner(capturer)
         self.register_event(
             events.FieldCaptured(
-                game_id=self._id,
+                game_id=self.get_id(),
                 field_id=field.get_id(),
                 capturer_id=capturer.get_id(),
                 new_field_value=field.get_value(),
@@ -297,7 +294,7 @@ class Game(Model):
         field_owner = field.get_owner()
         self.register_event(
             events.PlayerFieldAttacked(
-                game_id=self._id,
+                game_id=self.get_id(),
                 attacker_id=player.get_id(),
                 defender_id=field_owner.get_id(),
                 field_id=field.get_id(),
