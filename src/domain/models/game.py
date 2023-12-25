@@ -33,14 +33,14 @@ class Game(Model):
         self._player_turn_selector = player_turn_selector
 
     def __repr__(self) -> str:
-        return """Game(id={}, state={}, round_number={}, player_order={}, players={}, fields={}, duel={})""".format(
-            self._id,
-            self._state,
-            self._round_number,
-            self._player_order,
-            self._players,
-            self._fields,
-            self._duel,
+        return (
+            f'Game(id={self._id}, '
+            f'state={self._state}, '
+            f'round_number={self._round_number}, '
+            f'player_order={self._player_order}, '
+            f'players={self._players}, '
+            f'fields={self._fields}, '
+            f'duel={self._duel})'
         )
 
     def get_id(self) -> int:
@@ -262,10 +262,8 @@ class Game(Model):
         self._duel.increase_round_number(value)
 
     def _remove_player(self, player: Player) -> None:
-        if player not in self._players:
-            return
         self._players.remove(player)
-        self.register_event(events.PlayerRemoved(game_id=self._id, player_id=player.get_id()))
+        self.register_event(events.PlayerRemoved(game_id=self.get_id(), player_id=player.get_id()))
 
     def _ensure_can_attack_field(self, player: Player, field: Field) -> None:
         if self._state != enums.GameState.ATTACK_WAITING:
