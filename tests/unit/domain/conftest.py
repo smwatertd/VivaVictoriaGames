@@ -75,5 +75,19 @@ def ready_to_start_game(player_turn_selector: PlayerTurnSelector) -> Game:
     )
 
 
+@pytest.fixture
+def round_processing_game(player_turn_selector: PlayerTurnSelector) -> Game:
+    return Game(
+        id=1,
+        state=GameState.ATTACK_WAITING,
+        round_number=1,
+        player_order=None,
+        players=_get_players(game_settings.players_count_to_start),
+        fields=[],
+        duel=None,
+        player_turn_selector=player_turn_selector,
+    )
+
+
 def _get_players(count: int) -> list[Player]:
     return [Player(id=i, answer_id=None, connected_at=None, fields=[]) for i in range(count)]

@@ -108,6 +108,22 @@ class TestGame:
             in started_game._events
         )
 
+    def test_finish_round_state_setted(self, round_processing_game: Game) -> None:
+        round_processing_game.finish_round()
+
+        assert round_processing_game._state == GameState.IN_PROCESS
+
+    def test_finish_round_event_registered(self, round_processing_game: Game) -> None:
+        round_processing_game.finish_round()
+
+        assert (
+            events.RoundFinished(
+                game_id=round_processing_game._id,
+                round_number=round_processing_game._round_number,
+            )
+            in round_processing_game._events
+        )
+
     def _get_game_order(self, game: Game) -> list[Player]:
         return game._player_turn_selector.get_order(game._players)
 
