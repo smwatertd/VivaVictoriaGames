@@ -50,10 +50,11 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install --only main
 
 # Create user
-RUN useradd -m -u 1001 -s /bin/bash appuser
+RUN useradd -m -u 1001 -s /bin/bash user
 RUN mkdir -p $APP_PATH
-RUN chown appuser -R $APP_PATH
-RUN chown appuser -R $PYSETUP_PATH
+RUN chown user -R $APP_PATH
+RUN chown user -R $PYSETUP_PATH
+USER user
 
 
 # Install test dependencies
