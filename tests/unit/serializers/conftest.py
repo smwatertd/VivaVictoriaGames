@@ -8,46 +8,46 @@ import pytest
 from services.commands import Command
 
 
-class SerializableEvent(Event):
+class FakeEvent(Event):
     data: str = 'test'
 
 
-class SerializableCommand(Command):
+class FakeCommand(Command):
     data: str = 'test'
 
 
-class MyEventFactory(Factory):
+class FakeEventFactory(Factory):
     registry = {
-        'SerializableEvent': SerializableEvent,
+        'FakeEvent': FakeEvent,
     }
 
 
-class MyCommandFactory(Factory):
+class FakeCommandFactory(Factory):
     registry = {
-        'SerializableCommand': SerializableCommand,
+        'FakeCommand': FakeCommand,
     }
 
 
 @pytest.fixture
 def event() -> Event:
-    return SerializableEvent(data='test')
+    return FakeEvent(data='test')
 
 
 @pytest.fixture
 def command() -> Command:
-    return SerializableCommand(data='test')
+    return FakeCommand(data='test')
 
 
 @pytest.fixture
 def serializer() -> MessageSerializer:
-    return MessageSerializer(event_factory=MyEventFactory(), command_factory=MyCommandFactory())
+    return MessageSerializer(event_factory=FakeEventFactory(), command_factory=FakeCommandFactory())
 
 
 @pytest.fixture
 def event_message() -> Message:
-    return Message(type=MessageType.EVENT, payload_type='SerializableEvent', payload={'data': 'test'})
+    return Message(type=MessageType.EVENT, payload_type='FakeEvent', payload={'data': 'test'})
 
 
 @pytest.fixture
 def command_message() -> Message:
-    return Message(type=MessageType.COMMAND, payload_type='SerializableCommand', payload={'data': 'test'})
+    return Message(type=MessageType.COMMAND, payload_type='FakeCommand', payload={'data': 'test'})

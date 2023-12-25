@@ -26,12 +26,12 @@ class TestMessageSerializer:
     def test_serialize_payload_type_serialized(self, serializer: MessageSerializer, event: Event) -> None:
         message = serializer.serialize(event)
 
-        assert message.payload_type == 'SerializableEvent'
+        assert message.payload_type == event.__class__.__name__
 
     def test_serialize_payload_serialized(self, serializer: MessageSerializer, event: Event) -> None:
         message = serializer.serialize(event)
 
-        assert message.payload == {'data': 'test'}
+        assert message.payload == {'data': event.data}
 
     def test_deserialize_event_deserialized(self, serializer: MessageSerializer, event_message: Message) -> None:
         event = serializer.deserialize(event_message)
@@ -50,7 +50,7 @@ class TestMessageSerializer:
     def test_deserialize_payload_type_deserialized(self, serializer: MessageSerializer, event_message: Message) -> None:
         event = serializer.deserialize(event_message)
 
-        assert event.__class__.__name__ == 'SerializableEvent'
+        assert event.__class__.__name__ == event_message.payload_type
 
     def test_deserialize_payload_deserialized(self, serializer: MessageSerializer, event_message: Message) -> None:
         event = serializer.deserialize(event_message)
