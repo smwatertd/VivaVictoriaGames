@@ -269,11 +269,11 @@ class Game(Model):
 
     def _ensure_can_attack_field(self, player: Player, field: Field) -> None:
         if self._state != enums.GameState.ATTACK_WAITING:
-            raise exceptions.GameInvalidState(self._state)
+            raise exceptions.GameNotWaitingForAttack(self._state)
         if field.get_owner() == player:
-            raise exceptions.AlreadyOwned()
+            raise exceptions.FieldAlreadyOwned(field.get_id())
         if self._player_order != player:
-            raise exceptions.NotYourTurn()
+            raise exceptions.NotYourTurn
 
     def _attack_field(self, player: Player, field: Field) -> None:
         self.register_event(

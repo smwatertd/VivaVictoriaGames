@@ -124,8 +124,51 @@ class TestGame:
             in round_processing_game._events
         )
 
+    def test_attack_field_event_registered(self, round_processing_game: Game) -> None:
+        attacker = round_processing_game._player_order
+        field = round_processing_game._fields[0]
+
+        round_processing_game.attack_field(attacker, field)
+
+        assert (
+            events.FieldAttacked(
+                game_id=round_processing_game._id,
+                attacker_id=attacker._id,
+                field_id=field._id,
+            )
+            in round_processing_game._events
+        )
+
+    def test_attack_field_invalid_state(self, started_game: Game) -> None:
+        attacker = started_game._player_order
+        field = started_game._fields[0]
+
+        with pytest.raises(
+            exceptions.GameNotWaitingForAttack,
+            match=f'Game not waiting for attack. Game state: {started_game._state}',
+        ):
+            started_game.attack_field(attacker, field)
+
+    def test_attack_field_already_owned(self, round_processing_game: Game) -> None:
+        attacker = round_processing_game._player_order
+        field = round_processing_game._fields[1]
+        field._owner = attacker
+
+        with pytest.raises(exceptions.FieldAlreadyOwned, match=f'Field already owned. Field id: {field._id}'):
+            round_processing_game.attack_field(attacker, field)
+
+    def test_attack_field_not_player_order(self, round_processing_game: Game) -> None:
+        not_player_order = self._get_not_player_order(round_processing_game)
+        field = round_processing_game._fields[0]
+
+        with pytest.raises(exceptions.NotYourTurn):
+            round_processing_game.attack_field(not_player_order, field)
+
     def _get_game_order(self, game: Game) -> list[Player]:
         return game._player_turn_selector.get_order(game._players)
 
     def _get_game_player_order(self, game: Game) -> Player:
         return game._player_turn_selector.select(game._round_number, game._players)
+
+    def _get_not_player_order(self, game: Game) -> Player:
+        return next(player for player in game._players if player != game._player_order)
