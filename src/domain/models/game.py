@@ -43,6 +43,9 @@ class Game(Model):
             self._duel,
         )
 
+    def get_id(self) -> int:
+        return self._id
+
     def add_player(self, player: Player) -> None:
         self._ensure_can_add_player(player)
         self._add_player(player)
