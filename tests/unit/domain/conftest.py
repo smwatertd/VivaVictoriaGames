@@ -34,13 +34,13 @@ def empty_game() -> Game:
 
 
 @pytest.fixture
-def started_game(player: Player, player_turn_selector: PlayerTurnSelector) -> Game:
+def started_game(player_turn_selector: PlayerTurnSelector) -> Game:
     return Game(
         id=1,
         state=GameState.IN_PROCESS,
         round_number=0,
         player_order=None,
-        players=[player] * game_settings.players_count_to_start,
+        players=_get_players(game_settings.players_count_to_start),
         fields=[],
         duel=None,
         player_turn_selector=player_turn_selector,
@@ -48,13 +48,13 @@ def started_game(player: Player, player_turn_selector: PlayerTurnSelector) -> Ga
 
 
 @pytest.fixture
-def full_game(player: Player) -> Game:
+def full_game() -> Game:
     return Game(
         id=1,
         state=GameState.PLAYERS_WAITING,
         round_number=0,
         player_order=None,
-        players=[player] * game_settings.players_count_to_start,
+        players=_get_players(game_settings.players_count_to_start),
         fields=[],
         duel=None,
         player_turn_selector=None,
@@ -62,14 +62,18 @@ def full_game(player: Player) -> Game:
 
 
 @pytest.fixture
-def ready_to_start_game(player: Player, player_turn_selector: PlayerTurnSelector) -> Game:
+def ready_to_start_game(player_turn_selector: PlayerTurnSelector) -> Game:
     return Game(
         id=1,
         state=GameState.PLAYERS_WAITING,
         round_number=0,
         player_order=None,
-        players=[player] * game_settings.players_count_to_start,
+        players=_get_players(game_settings.players_count_to_start),
         fields=[],
         duel=None,
         player_turn_selector=player_turn_selector,
     )
+
+
+def _get_players(count: int) -> list[Player]:
+    return [Player(id=i, answer_id=None, connected_at=None, fields=[]) for i in range(count)]

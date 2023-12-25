@@ -68,13 +68,13 @@ class Game(Model):
             ),
         )
 
-    def attack_field(self, player: Player, field: Field) -> None:
-        self._ensure_can_attack_field(player, field)
-        self._attack_field(player, field)
-
     def finish_round(self) -> None:
         self._state = enums.GameState.IN_PROCESS
         self.register_event(events.RoundFinished(game_id=self._id, round_number=self._round_number))
+
+    def attack_field(self, player: Player, field: Field) -> None:
+        self._ensure_can_attack_field(player, field)
+        self._attack_field(player, field)
 
     def start_duel(self, attacker: Player, defender: Player, field: Field) -> None:
         self._state = enums.GameState.DUELING

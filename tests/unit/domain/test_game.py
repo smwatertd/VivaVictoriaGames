@@ -89,6 +89,12 @@ class TestGame:
 
         assert started_game._state == GameState.ATTACK_WAITING
 
+    def test_start_round_player_order_setted(self, started_game: Game) -> None:
+        started_game.start_round()
+
+        player_order = self._get_game_player_order(started_game)
+        assert started_game._player_order == player_order
+
     def test_start_round_event_registered(self, started_game: Game) -> None:
         started_game.start_round()
 
