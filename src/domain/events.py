@@ -18,9 +18,13 @@ class PlayerAdded(GameEvent):
     connected_players: list[ConnectedPlayer]
 
 
+class OrderPlayer(BaseModel):
+    id: int
+
+
 class GameStarted(Event):
     game_id: int
-    players_order_ids: list[int]
+    order: list[OrderPlayer]
 
 
 class PlayerRemoved(Event):

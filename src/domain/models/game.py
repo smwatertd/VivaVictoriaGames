@@ -60,11 +60,13 @@ class Game(Model):
     def start(self) -> None:
         self._round_number = 1
         self._state = enums.GameState.IN_PROCESS
-        players_order = self._player_turn_selector.get_order(self._players)
         self.register_event(
             events.GameStarted(
-                game_id=self._id,
-                players_order_ids=[player.get_id() for player in players_order],
+                game_id=self.get_id(),
+                order=[
+                    events.OrderPlayer(id=player.get_id())
+                    for player in self._player_turn_selector.get_order(self._players)
+                ],
             ),
         )
 

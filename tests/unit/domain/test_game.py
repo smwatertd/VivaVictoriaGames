@@ -1,4 +1,5 @@
 from domain import events, exceptions
+from domain.enums import GameState
 from domain.models import Game, Player
 
 import pytest
@@ -60,4 +61,33 @@ class TestGame:
                 player_id=player._id,
             )
             in empty_game._events
+        )
+
+    def test_try_start_game_doesnt_started(self, empty_game: Game) -> None:
+        empty_game.try_start()
+
+        assert empty_game._state == GameState.PLAYERS_WAITING
+
+    def test_try_start_game_started(self, ready_to_start_game: Game) -> None:
+        ready_to_start_game.try_start()
+
+        assert ready_to_start_game._state == GameState.IN_PROCESS
+
+    def test_try_start_round_number_setted(self, ready_to_start_game: Game) -> None:
+        ready_to_start_game.try_start()
+
+        assert ready_to_start_game._round_number == 1
+
+    def test_try_start_event_registered(self, ready_to_start_game: Game) -> None:
+        ready_to_start_game.try_start()
+
+        assert (
+            events.GameStarted(
+                game_id=ready_to_start_game._id,
+                order=[
+                    events.OrderPlayer(id=player._id)
+                    for player in ready_to_start_game._player_turn_selector.get_order(ready_to_start_game._players)
+                ],
+            )
+            in ready_to_start_game._events
         )
