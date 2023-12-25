@@ -1,5 +1,6 @@
 from core.settings import game_settings
 
+from domain.enums import GameState
 from domain.models import Duel, Field, Game, Player
 
 from infrastructure.ports.repositories import GamesRepository
@@ -38,6 +39,12 @@ class SQLAlchemyGamesRepository(GamesRepository):
         game_id = result.scalar_one()
         await self._create_fields(game_settings.fields_count, game_id)
         await self._create_duel(game_id)
+
+    async def get_available_games(self) -> list[Game]:
+        result = await self._session.execute(
+            select(Game).where(Game._state == GameState.PLAYERS_WAITING),
+        )
+        return list(result.scalars().fetchall())
 
     async def _create_fields(self, fields_count: int, game_id: int) -> None:
         for _ in range(fields_count):
