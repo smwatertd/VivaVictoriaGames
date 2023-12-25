@@ -2,12 +2,14 @@ class AddPlayerError(Exception):
     pass
 
 
-class PlayerAlreadyAdded(AddPlayerError):
-    pass
+class GameAlreadyStarted(AddPlayerError):
+    def __init__(self) -> None:
+        super().__init__('Game already started')
 
 
 class GameIsFull(AddPlayerError):
-    pass
+    def __init__(self) -> None:
+        super().__init__('Game is full')
 
 
 class AttackError(Exception):
@@ -27,9 +29,4 @@ class AlreadyOwned(AttackError):
 
 
 class PlayerNotFound(AttackError):
-    pass
-
-
-# TODO: Add more details
-class GameInvalidState(Exception):
     pass

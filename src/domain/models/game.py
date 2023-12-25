@@ -47,7 +47,7 @@ class Game(Model):
         return self._id
 
     def add_player(self, player: Player) -> None:
-        self._ensure_can_add_player(player)
+        self._ensure_can_add_player()
         self._add_player(player)
 
     def remove_player(self, player: Player) -> None:
@@ -238,19 +238,11 @@ class Game(Model):
             ),
         )
 
-    def _increase_round_number(self, value: int = 1) -> None:
-        self._round_number += value
-
-    def _increase_duel_round_number(self, value: int = 1) -> None:
-        self._duel.increase_round_number(value)
-
-    def _ensure_can_add_player(self, player: Player) -> None:
+    def _ensure_can_add_player(self) -> None:
         if self._state != enums.GameState.PLAYERS_WAITING:
-            raise exceptions.GameInvalidState(self._state)
+            raise exceptions.GameAlreadyStarted
         if self.is_full():
-            raise exceptions.GameIsFull()
-        # if player in self._players:
-        #     raise exceptions.PlayerAlreadyAdded()
+            raise exceptions.GameIsFull
 
     def _add_player(self, player: Player) -> None:
         self._players.append(player)
@@ -262,6 +254,12 @@ class Game(Model):
                 game_players_ids=[player.get_id() for player in self._players],
             ),
         )
+
+    def _increase_round_number(self, value: int = 1) -> None:
+        self._round_number += value
+
+    def _increase_duel_round_number(self, value: int = 1) -> None:
+        self._duel.increase_round_number(value)
 
     def _remove_player(self, player: Player) -> None:
         if player not in self._players:
