@@ -1,4 +1,3 @@
-from domain.commands import Command
 from domain.events import Event
 
 from infrastructure.adapters import Message, MessageSerializer, MessageType
@@ -6,6 +5,7 @@ from infrastructure.ports import Factory
 
 import pytest
 
+from services.commands import Command
 from services.exceptions import InvalidMessageType
 
 

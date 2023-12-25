@@ -4,7 +4,6 @@
 **/.pytest_cache
 .venv
 migrations
-tests
 .gitignore
 Makefile
 README.md

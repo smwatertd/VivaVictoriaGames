@@ -2,13 +2,13 @@ from typing import Any
 
 from core.container import container
 
-from domain import commands
-
-from entrypoints.schemas import GamesConnectionSchema
+from entrypoints import schemas
 
 from fastapi import APIRouter
 
 from infrastructure import adapters
+
+from services import commands
 
 from starlette.endpoints import WebSocketEndpoint
 from starlette.websockets import WebSocket
@@ -55,7 +55,7 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
         game = websocket.query_params.get('game', '1')[-1]
         username = websocket.query_params.get('username', 'anonymous')
         user_pk = username[-1]
-        self.data = GamesConnectionSchema(game_pk=int(game), user_pk=int(user_pk), username=username)
+        self.data = schemas.GamesConnectionSchema(game_pk=int(game), user_pk=int(user_pk), username=username)
 
 
 class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):

@@ -13,3 +13,11 @@ class GamesRepository(Repository, ABC):
     @abstractmethod
     async def get(self, id: int) -> Game:
         pass
+
+    @abstractmethod
+    async def create(self, creator_id: int) -> None:
+        pass
+
+    @abstractmethod
+    async def get_available_games(self) -> list[Game]:
+        pass

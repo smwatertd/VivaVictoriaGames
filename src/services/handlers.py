@@ -1,8 +1,10 @@
 import asyncio
 
-from domain import commands, events
+from domain import events
 
 from infrastructure.ports import UnitOfWork
+
+from services import commands
 
 
 async def add_game_player(command: commands.AddUser, uow: UnitOfWork) -> None:
@@ -35,6 +37,12 @@ async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
         game = await uow.games.get(command.game_pk)
         player = await uow.players.get(command.player_pk)
         game.set_player_answer(player, command.answer_pk)
+        await uow.commit()
+
+
+async def create_game(command: commands.CreateGame, uow: UnitOfWork) -> None:
+    async with uow:
+        await uow.games.create(command.creator_id)
         await uow.commit()
 
 
@@ -165,6 +173,7 @@ COMMAND_HANDLERS = {
     commands.RemoveUser: remove_game_player,
     commands.AttackField: attack_field,
     commands.SendAnswer: send_answer,
+    commands.CreateGame: create_game,
 }
 
 EVENT_HANDLERS = {
