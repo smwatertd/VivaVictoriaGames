@@ -44,6 +44,11 @@ def mock_duel() -> Duel:
 
 
 @pytest.fixture
+def category() -> int:
+    return 1
+
+
+@pytest.fixture
 def empty_game() -> Game:
     return Game(
         id=1,
@@ -109,6 +114,29 @@ def round_processing_game(
     return Game(
         id=1,
         state=GameState.ATTACK_WAITING,
+        round_number=1,
+        player_order=players[0],
+        players=players,
+        fields=fields,
+        duel=duel,
+        player_turn_selector=player_turn_selector,
+    )
+
+
+@pytest.fixture
+def duel_processing_game(
+    players: list[Player],
+    fields: list[Field],
+    duel: Duel,
+    player_turn_selector: PlayerTurnSelector,
+) -> Game:
+    # duel._attacker = players[0]
+    # duel._defender = players[1]
+    # duel._field = fields[0]
+    # duel._round_number = 1
+    return Game(
+        id=1,
+        state=GameState.DUELING,
         round_number=1,
         player_order=players[0],
         players=players,

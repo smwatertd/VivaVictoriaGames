@@ -201,6 +201,27 @@ class TestGame:
 
         assert mock_duel.start.called_once_with(attacker, defender, field)
 
+    def test_set_duel_category_category_setted(
+        self,
+        duel_processing_game: Game,
+        category: int,
+        mock_duel: Duel,
+    ) -> None:
+        duel_processing_game._duel = mock_duel
+
+        assert mock_duel.set_category.called_once_with(category)
+
+    def test_set_duel_category_event_registered(self, category: int, duel_processing_game: Game) -> None:
+        duel_processing_game.set_duel_category(category)
+
+        assert (
+            events.CategorySetted(
+                game_id=duel_processing_game._id,
+                category_id=category,
+            )
+            in duel_processing_game._events
+        )
+
     def _get_game_order(self, game: Game) -> list[Player]:
         return game._player_turn_selector.get_order(game._players)
 
