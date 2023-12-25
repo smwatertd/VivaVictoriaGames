@@ -40,6 +40,12 @@ async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
         await uow.commit()
 
 
+async def create_game(command: commands.CreateGame, uow: UnitOfWork) -> None:
+    async with uow:
+        await uow.games.create(command.creator_id)
+        await uow.commit()
+
+
 async def try_start_game(event: events.PlayerAdded, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
@@ -167,6 +173,7 @@ COMMAND_HANDLERS = {
     commands.RemoveUser: remove_game_player,
     commands.AttackField: attack_field,
     commands.SendAnswer: send_answer,
+    commands.CreateGame: create_game,
 }
 
 EVENT_HANDLERS = {
