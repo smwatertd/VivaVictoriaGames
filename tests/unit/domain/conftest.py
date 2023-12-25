@@ -1,7 +1,9 @@
+from unittest.mock import MagicMock
+
 from core.settings import game_settings
 
 from domain.enums import GameState
-from domain.models import Field, Game, Player
+from domain.models import Duel, Field, Game, Player
 from domain.strategies import PlayerTurnSelector
 
 import pytest
@@ -27,8 +29,18 @@ def fields() -> list[Field]:
 
 
 @pytest.fixture
+def duel() -> Duel:
+    return Duel(id=1, round_number=0, attacker=None, defender=None, field=None, category_id=None, question_id=None)
+
+
+@pytest.fixture
 def player_turn_selector() -> PlayerTurnSelector:
     return FakePlayerTurnSelector()
+
+
+@pytest.fixture
+def mock_duel() -> Duel:
+    return MagicMock(spec=Duel)
 
 
 @pytest.fixture
@@ -46,7 +58,7 @@ def empty_game() -> Game:
 
 
 @pytest.fixture
-def started_game(fields: list[Field], players: list[Player], player_turn_selector: PlayerTurnSelector) -> Game:
+def started_game(players: list[Player], fields: list[Field], player_turn_selector: PlayerTurnSelector) -> Game:
     return Game(
         id=1,
         state=GameState.IN_PROCESS,
@@ -88,7 +100,12 @@ def ready_to_start_game(players: list[Player], player_turn_selector: PlayerTurnS
 
 
 @pytest.fixture
-def round_processing_game(players: list[Player], fields: list[Field], player_turn_selector: PlayerTurnSelector) -> Game:
+def round_processing_game(
+    players: list[Player],
+    fields: list[Field],
+    duel: Duel,
+    player_turn_selector: PlayerTurnSelector,
+) -> Game:
     return Game(
         id=1,
         state=GameState.ATTACK_WAITING,
@@ -96,6 +113,6 @@ def round_processing_game(players: list[Player], fields: list[Field], player_tur
         player_order=players[0],
         players=players,
         fields=fields,
-        duel=None,
+        duel=duel,
         player_turn_selector=player_turn_selector,
     )

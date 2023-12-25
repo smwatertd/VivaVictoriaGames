@@ -184,6 +184,10 @@ def start_mappers() -> None:
     )
 
 
+def stop_mappers() -> None:
+    mapper.dispose()
+
+
 @event.listens_for(models.Game, 'load')
 def on_game_load(game: models.Game, _: Any) -> None:
     game._events: list[Event] = []  # type: ignore

@@ -1,6 +1,6 @@
 from domain import events, exceptions
 from domain.enums import GameState
-from domain.models import Game, Player
+from domain.models import Duel, Game, Player
 
 import pytest
 
@@ -163,6 +163,43 @@ class TestGame:
 
         with pytest.raises(exceptions.NotYourTurn):
             round_processing_game.attack_field(not_player_order, field)
+
+    def test_start_duel_state_setted(self, round_processing_game: Game) -> None:
+        attacker = round_processing_game._player_order
+        defender = self._get_not_player_order(round_processing_game)
+        field = round_processing_game._fields[0]
+
+        round_processing_game.start_duel(attacker, defender, field)
+
+        assert round_processing_game._state == GameState.DUELING
+
+    def test_start_duel_event_registered(self, round_processing_game: Game, mock_duel: Duel) -> None:
+        attacker = round_processing_game._player_order
+        defender = self._get_not_player_order(round_processing_game)
+        round_processing_game._duel = mock_duel
+        field = round_processing_game._fields[0]
+
+        round_processing_game.start_duel(attacker, defender, field)
+
+        assert (
+            events.DuelStarted(
+                game_id=round_processing_game._id,
+                attacker_id=attacker._id,
+                defender_id=defender._id,
+                field_id=field._id,
+            )
+            in round_processing_game._events
+        )
+
+    def test_start_duel_duel_started(self, round_processing_game: Game, mock_duel: Duel) -> None:
+        attacker = round_processing_game._player_order
+        defender = self._get_not_player_order(round_processing_game)
+        round_processing_game._duel = mock_duel
+        field = round_processing_game._fields[0]
+
+        round_processing_game.start_duel(attacker, defender, field)
+
+        assert mock_duel.start.called_once_with(attacker, defender, field)
 
     def _get_game_order(self, game: Game) -> list[Player]:
         return game._player_turn_selector.get_order(game._players)

@@ -257,12 +257,6 @@ class Game(Model):
             ),
         )
 
-    def _increase_round_number(self, value: int = 1) -> None:
-        self._round_number += value
-
-    def _increase_duel_round_number(self, value: int = 1) -> None:
-        self._duel.increase_round_number(value)
-
     def _remove_player(self, player: Player) -> None:
         self._players.remove(player)
         self.register_event(events.PlayerRemoved(game_id=self.get_id(), player_id=player.get_id()))
@@ -309,3 +303,9 @@ class Game(Model):
                 field_id=field.get_id(),
             ),
         )
+
+    def _increase_round_number(self, value: int = 1) -> None:
+        self._round_number += value
+
+    def _increase_duel_round_number(self, value: int = 1) -> None:
+        self._duel.increase_round_number(value)

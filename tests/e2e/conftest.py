@@ -1,4 +1,6 @@
-from core.app_factory import get_production_app
+from typing import Generator
+
+from core.app_factory import get_test_app
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -9,8 +11,9 @@ from tests.e2e.api_client import APIClient
 
 
 @pytest.fixture
-def app() -> FastAPI:
-    return get_production_app()
+def app() -> Generator[FastAPI, None, None]:
+    with get_test_app(is_start_mappers=True) as app:
+        yield app
 
 
 @pytest.fixture
