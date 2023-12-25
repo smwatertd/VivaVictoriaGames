@@ -28,7 +28,7 @@ class TestGame:
         assert events.PlayerAdded(
             game_id=empty_game._id,
             player_id=player._id,
-            game_players_ids=[player._id],
+            connected_players=[events.ConnectedPlayer(id=player._id)],
         ) in empty_game._events
 
     def test_add_player_game_game_already_started(self, started_game: Game, player: Player) -> None:

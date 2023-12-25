@@ -5,10 +5,17 @@ class Event(BaseModel):
     pass
 
 
-class PlayerAdded(Event):
+class GameEvent(Event):
     game_id: int
+
+
+class ConnectedPlayer(BaseModel):
+    id: int
+
+
+class PlayerAdded(GameEvent):
     player_id: int
-    game_players_ids: list[int]
+    connected_players: list[ConnectedPlayer]
 
 
 class GameStarted(Event):

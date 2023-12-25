@@ -249,9 +249,9 @@ class Game(Model):
         player.set_connected_at(datetime.utcnow())
         self.register_event(
             events.PlayerAdded(
-                game_id=self._id,
+                game_id=self.get_id(),
                 player_id=player.get_id(),
-                game_players_ids=[player.get_id() for player in self._players],
+                connected_players=[events.ConnectedPlayer(id=player.get_id())],
             ),
         )
 
