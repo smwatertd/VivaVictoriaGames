@@ -24,7 +24,5 @@ class MessageSerializer:
     def deserialize(self, message: Message) -> Event | Command:
         if not isinstance(message, Message):
             raise InvalidMessageType(type(message))
-        if message.type == MessageType.UNKNOWN:
-            raise InvalidMessageType(message.type)
         factory = self._event_factory if message.type == MessageType.EVENT else self._command_factory
         return factory.create(message.payload_type, **message.payload)
