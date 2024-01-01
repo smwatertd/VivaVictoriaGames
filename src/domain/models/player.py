@@ -1,48 +1,82 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 
-
-if TYPE_CHECKING:
-    from domain.models.field import Field
+from domain.models.captured_field import CapturedField
+from domain.models.field import Field
+from domain.models.marked_field import MarkField
 
 
 class Player:
-    def __init__(self, id: int, answer_id: int | None, connected_at: datetime, fields: list['Field']) -> None:
+    def __init__(
+        self,
+        id: int,
+        connected_at: datetime | None,
+        answer_id: int | None,
+        answered_at: datetime | None,
+        fields: list['CapturedField'],
+        marked_field: 'MarkField | None',
+    ) -> None:
         self._id = id
-        self._answer_id = answer_id
         self._connected_at = connected_at
+        self._answer_id = answer_id
+        self._answered_at = answered_at
         self._fields = fields
+        self._marked_field = marked_field
 
     def __repr__(self) -> str:
-        return f'Player(id={self._id}, answer={self._answer_id})'
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Player):
-            return NotImplemented
-        return self._id == other._id
+        return f'Player(id={self._id})'
 
     def get_id(self) -> int:
         return self._id
 
-    def set_answer(self, answer_id: int) -> None:
-        self._answer_id = answer_id
+    def on_connect(self) -> None:
+        self._connected_at = datetime.utcnow()
+
+    def get_connected_at(self) -> datetime:
+        assert self._connected_at
+        return self._connected_at
+
+    def set_answer(self, answer: int) -> None:
+        self._answer_id = answer
+        self._answered_at = datetime.utcnow()
+
+    def get_answer(self) -> int:
+        assert self._answer_id, 'Player is not answered'
+        return self._answer_id
+
+    def clear_answer(self) -> None:
+        self._answer_id = None
+
+    def get_answered_at(self) -> datetime:
+        assert self._answered_at, 'Player is not answered'
+        return self._answered_at
+
+    def set_base(self, field: Field) -> None:
+        captured_field = CapturedField(field, self)
+        self._fields.append(captured_field)
+        captured_field.mark_as_base()
+
+    def mark_field(self, field: Field) -> None:
+        self._marked_field = MarkField(field)
+
+    def is_marked_field(self) -> bool:
+        return self._marked_field is not None
+
+    def get_marked_field(self) -> MarkField:
+        assert self._marked_field
+        return self._marked_field
+
+    def clear_marked_field(self) -> None:
+        self._marked_field = None
 
     def is_answered(self) -> bool:
         return self._answer_id is not None
 
-    def get_answer_id(self) -> int:
-        if self._answer_id is None:
-            return -1
-        return self._answer_id
+    def capture(self, field: Field) -> None:
+        captured_field = CapturedField(field, self)
+        self._fields.append(captured_field)
 
-    def reset_answer_id(self) -> None:
-        self._answer_id = None
-
-    def set_connected_at(self, connected_at: datetime) -> None:
-        self._connected_at = connected_at
-
-    def get_connected_at(self) -> datetime:
-        return self._connected_at
-
-    def calculate_score(self) -> int:
-        return sum(field.get_value() for field in self._fields)
+    def get_captured_field(self, field: Field) -> CapturedField:
+        for captured_field in self._fields:
+            if captured_field.get_field() == field:
+                return captured_field
+        raise ValueError('Field is not captured')
