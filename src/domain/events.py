@@ -165,3 +165,82 @@ class PlayerSelectedBase(GameEvent):
 
 class SelectingBaseStageFinished(GameEvent):
     pass
+
+
+class CapturingStageStarted(GameEvent):
+    pass
+
+
+class CapturingStageFinished(GameEvent):
+    pass
+
+
+class CapturingStageRoundStarted(GameEvent):
+    duration: int
+    round_number: int
+
+
+class MarkingConflictPlayer(BaseModel):
+    id: int
+
+
+class MarkingConflictDetected(GameEvent):
+    field_id: int
+    players: list[MarkingConflictPlayer]
+
+
+class CaptureBattlePlayer(BaseModel):
+    id: int
+
+
+class CapturingBattleStarted(GameEvent):
+    players: list[CaptureBattlePlayer]
+    field_id: int
+
+
+class CapturingBattleCategorySetted(GameEvent):
+    category_id: int
+
+
+class CapturingBattleQuestionSetted(GameEvent):
+    question_id: int
+
+
+class CapturingBattlePlayerAnswered(GameEvent):
+    player_id: int
+
+
+class CapturedField(BaseModel):
+    field_id: int
+    new_field_value: int
+    player_id: int
+
+
+class CapturingStageRoundFinished(GameEvent):
+    captured_fields: list[CapturedField]
+
+
+class BaseSelected(GameEvent):
+    player_id: int
+    field_id: int
+
+
+class FieldMarked(GameEvent):
+    player_id: int
+
+
+class PlayerMarkedField(BaseModel):
+    player_id: int
+    field_id: int
+
+
+class FieldsMarked(GameEvent):
+    marked_fields: list[PlayerMarkedField]
+
+
+class AllPlayersMarkedFields(GameEvent):
+    pass
+
+
+class CaptureConflictPlayerAnswered(GameEvent):
+    player_id: int
