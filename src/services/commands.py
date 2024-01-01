@@ -5,6 +5,10 @@ class Command(BaseModel):
     pass
 
 
+class CreateGame(Command):
+    creator_id: int
+
+
 class AddUser(Command):
     game_pk: int
     user_pk: int
@@ -27,7 +31,3 @@ class SendAnswer(Command):
     game_pk: int
     player_pk: int
     answer_pk: int
-
-
-class CreateGame(Command):
-    creator_id: int
