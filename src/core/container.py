@@ -4,6 +4,7 @@ from core.settings import game_events_message_broker_settings, game_message_brok
 
 from dependency_injector import containers, providers
 
+from domain.resolvers import AnsweredByConflictResolver, ConflictResolver
 from domain.strategies import ConnectionTimeAndIdentityPlayerTurnSelector, PlayerTurnSelector
 
 from infrastructure import adapters, ports
@@ -78,16 +79,20 @@ class Container(containers.DeclarativeContainer):
         adapters.ChannelLayer,
     )  # type: ignore
 
-    player_turn_selector: Type[PlayerTurnSelector] = providers.Factory(
-        ConnectionTimeAndIdentityPlayerTurnSelector,
-    )  # type: ignore
-
     message_handler: Type[adapters.MessageHandler] = providers.Factory(
         adapters.MessageHandler,
         events_group=game_events_message_broker_settings.games_events_queue,
         consumer=message_consumer,
         messagebus=messagebus,
         serializer=message_serializer,
+    )  # type: ignore
+
+    player_turn_selector: Type[PlayerTurnSelector] = providers.Factory(
+        ConnectionTimeAndIdentityPlayerTurnSelector,
+    )  # type: ignore
+
+    conflict_resolver: Type[ConflictResolver] = providers.Factory(
+        AnsweredByConflictResolver,
     )  # type: ignore
 
 
