@@ -67,6 +67,10 @@ class GameSettings(BaseSettings):
 
     capturing_stage_round_time_seconds: int = 30
 
+    battlings_stage_rounds_count: int = 1
+
+    duel_max_rounds: int = 3
+
     model_config = SettingsConfigDict(
         env_file='.env',
         env_prefix='GAME_',
