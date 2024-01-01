@@ -2,9 +2,11 @@ from enum import Enum
 
 
 class GameState(str, Enum):
-    PLAYERS_WAITING = 'players_waiting'
-    IN_PROCESS = 'in_process'
-    ATTACK_WAITING = 'attack_waiting'
-    DUELING = 'dueling'
-    ANSWERS_WAITING = 'answers_waiting'
-    ENDED = 'ended'
+    PLAYERS_WAITING = 'PLAYERS_WAITING'
+    IN_PROCESS = 'IN_PROCESS'
+    PREPARATORY_STAGE = 'PREPARATORY_STAGE'
+    MARKS_WAITING = 'MARKS_WAITING'
+    BATTLING_STAGE = 'BATTLING_STAGE'
+    DUELING = 'DUELING'
+    ANSWERS_WAITING = 'ANSWERS_WAITING'
+    ENDED = 'ENDED'
