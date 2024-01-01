@@ -12,13 +12,7 @@ class SQLAlchemyFieldsRepository(FieldsRepository):
         self._session = session
 
     async def get(self, id: int) -> Field:
-        result = await self._session.execute(
-            select(Field)
-            .where(Field._id == id)
-            .options(
-                joinedload(Field._owner),
-            ),
-        )
+        result = await self._session.execute(select(Field).where(Field._id == id).options(joinedload(Field._captured)))
         field = result.scalars().first()
         if field is None:
             # TODO: replace with proper exception
