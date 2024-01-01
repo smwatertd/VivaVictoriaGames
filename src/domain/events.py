@@ -22,8 +22,12 @@ class OrderPlayer(BaseModel):
     id: int
 
 
-class GameStarted(Event):
-    game_id: int
+class GameField(BaseModel):
+    id: int
+
+
+class GameStarted(GameEvent):
+    fields: list[GameField]
     order: list[OrderPlayer]
 
 
@@ -35,6 +39,7 @@ class PlayerRemoved(Event):
 class FieldAttacked(Event):
     game_id: int
     attacker_id: int
+    defender_id: int
     field_id: int
 
 
@@ -52,11 +57,18 @@ class PlayerFieldAttacked(Event):
     field_id: int
 
 
-class DuelStarted(Event):
-    game_id: int
+class DuelPlayer(BaseModel):
+    id: int
+
+
+class DuelStarted(GameEvent):
     attacker_id: int
     defender_id: int
     field_id: int
+
+
+class DuelCategorySetted(GameEvent):
+    category_id: int
 
 
 class QuestionSetted(Event):
@@ -75,22 +87,13 @@ class RoundFinished(Event):
     round_number: int
 
 
-class GameResultRow(BaseModel):
-    place: int
-    player_id: int
-    score: int
-
-
 class GameEnded(Event):
     game_id: int
-    results: list[GameResultRow]
 
 
 class DuelRoundStarted(Event):
     game_id: int
     round_number: int
-    duel_round_number: int
-    category_id: int
 
 
 class CategorySetted(Event):
@@ -100,8 +103,6 @@ class CategorySetted(Event):
 
 class DuelRoundFinished(Event):
     game_id: int
-    round_number: int
-    correct_answer_id: int
 
 
 class FieldDefended(Event):
@@ -130,3 +131,37 @@ class DuelRoundTimerStarted(Event):
     round_number: int
     duel_round_number: int
     duration: int
+
+
+class PreparingStageStarted(GameEvent):
+    pass
+
+
+class PreparingStageEnded(GameEvent):
+    pass
+
+
+class PreparatoryStageStarted(GameEvent):
+    rounds_count: int
+
+
+class SelectingBaseStageEnded(GameEvent):
+    pass
+
+
+class SelectingBaseStageRoundStarted(GameEvent):
+    player_id: int
+    duration: int
+    round_number: int
+
+
+class SelectingBaseStageRoundFinished(GameEvent):
+    pass
+
+
+class PlayerSelectedBase(GameEvent):
+    pass
+
+
+class SelectingBaseStageFinished(GameEvent):
+    pass
