@@ -27,6 +27,18 @@ class SelectBase(Command):
     field_id: int
 
 
+class MarkField(Command):
+    game_id: int
+    player_id: int
+    field_id: int
+
+
+class SendMarkingConflictAnswer(Command):
+    game_id: int
+    player_id: int
+    answer_id: int
+
+
 class AttackField(Command):
     game_pk: int
     attacker_pk: int
