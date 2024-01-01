@@ -52,7 +52,7 @@ class BaseGamesWebSocketEndpoint(WebSocketEndpoint):
         return message.get('action', ''), message.get('data', {})
 
     def _get_websocket_data(self, websocket: WebSocket) -> None:
-        game = websocket.query_params.get('game', '1')[-1]
+        game = websocket.query_params.get('game', '1')
         username = websocket.query_params.get('username', 'anonymous')
         user_pk = username[-1]
         self.data = schemas.GamesConnectionSchema(game_pk=int(game), user_pk=int(user_pk), username=username)
@@ -78,6 +78,15 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
                 game_pk=self.data.game_pk,
                 user_pk=self.data.user_pk,
                 username=self.data.username,
+            ),
+        )
+
+    async def select_base(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
+        await self._handler_command(
+            commands.SelectBase(
+                game_id=self.data.game_pk,
+                player_id=self.data.user_pk,
+                field_id=int(data.get('field_id', 0)),
             ),
         )
 
