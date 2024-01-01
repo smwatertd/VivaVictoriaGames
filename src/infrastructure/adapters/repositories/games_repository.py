@@ -1,7 +1,7 @@
 from core.settings import game_settings
 
+from domain import models
 from domain.enums import GameState
-from domain.models import Duel, Field, Game, Player
 
 from infrastructure.ports.repositories import GamesRepository
 
@@ -15,16 +15,27 @@ class SQLAlchemyGamesRepository(GamesRepository):
         super().__init__()
         self._session = session
 
-    async def get(self, id: int) -> Game:
+    async def get(self, id: int) -> models.Game:
         result = await self._session.execute(
-            select(Game)
-            .where(Game._id == id)
+            select(models.Game)
+            .where(models.Game._id == id)
             .options(
-                joinedload(Game._players).joinedload(Player._fields),
-                joinedload(Game._fields),
-                joinedload(Game._duel).joinedload(Duel._attacker),
-                joinedload(Game._duel).joinedload(Duel._defender),
-                joinedload(Game._player_order),
+                joinedload(models.Game._preparation),
+                joinedload(models.Game._capture)
+                .joinedload(models.Capture._marked_fields)
+                .joinedload(models.MarkField._players),
+                joinedload(models.Game._capture)
+                .joinedload(models.Capture._marked_fields)
+                .joinedload(models.MarkField._field),
+                joinedload(models.Game._battle).joinedload(models.Battle._duel),
+                joinedload(models.Game._players).joinedload(models.Player._fields),
+                joinedload(models.Game._players)
+                .joinedload(models.Player._marked_field)
+                .joinedload(models.MarkField._field),
+                joinedload(models.Game._fields)
+                .joinedload(models.Field._captured)
+                .joinedload(models.CapturedField._owner),
+                joinedload(models.Game._player_order),
             ),
         )
         game = result.scalars().first()
@@ -35,23 +46,38 @@ class SQLAlchemyGamesRepository(GamesRepository):
         return game
 
     async def create(self, creator_id: int) -> None:
-        result = await self._session.execute(insert(Game).values(creator_id=creator_id).returning(Game._id))
-        game_id = result.scalar_one()
-        await self._create_fields(game_settings.fields_count, game_id)
-        await self._create_duel(game_id)
-
-    async def get_available_games(self) -> list[Game]:
         result = await self._session.execute(
-            select(Game).where(Game._state == GameState.PLAYERS_WAITING),
+            insert(models.Game).values(creator_id=creator_id).returning(models.Game._id),
+        )
+        game_id = result.scalar_one()
+        await self._create_preparation(game_id)
+        await self._create_capture(game_id)
+        await self._create_battle(game_id)
+        await self._create_fields(game_settings.fields_count, game_id)
+
+    async def get_available_games(self) -> list[models.Game]:
+        result = await self._session.execute(
+            select(models.Game).where(models.Game._state == GameState.PLAYERS_WAITING),
         )
         return list(result.scalars().fetchall())
+
+    async def _create_preparation(self, game_id: int) -> None:
+        await self._session.execute(insert(models.Preparation).values(game_id=game_id))
+
+    async def _create_capture(self, game_id: int) -> None:
+        await self._session.execute(insert(models.Capture).values(game_id=game_id))
+
+    async def _create_battle(self, game_id: int) -> None:
+        result = await self._session.execute(insert(models.Battle).values(game_id=game_id).returning(models.Battle._id))
+        battle_id = result.scalar_one()
+        await self._create_duel(battle_id)
 
     async def _create_fields(self, fields_count: int, game_id: int) -> None:
         for _ in range(fields_count):
             await self._create_field(game_id)
 
-    async def _create_field(self, game_id: int) -> None:
-        await self._session.execute(insert(Field).values(game_id=game_id))
+    async def _create_duel(self, battle_id: int) -> None:
+        await self._session.execute(insert(models.Duel).values(battle_id=battle_id))
 
-    async def _create_duel(self, game_id: int) -> None:
-        await self._session.execute(insert(Duel).values(game_id=game_id))
+    async def _create_field(self, game_id: int) -> None:
+        await self._session.execute(insert(models.Field).values(game_id=game_id))
