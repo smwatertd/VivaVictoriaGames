@@ -242,5 +242,22 @@ class AllPlayersMarkedFields(GameEvent):
     pass
 
 
+class BattlingsStageStarted(GameEvent):
+    rounds_count: int
+
+
+class BattlingsStageEnded(GameEvent):
+    pass
+
+
+class BattlingsStageRoundStarted(GameEvent):
+    player_id: int
+    round_number: int
+
+
+class BattlingsStageRoundEnded(GameEvent):
+    pass
+
+
 class CaptureConflictPlayerAnswered(GameEvent):
     player_id: int
