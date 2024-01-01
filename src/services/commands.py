@@ -21,6 +21,12 @@ class RemoveUser(Command):
     username: str
 
 
+class SelectBase(Command):
+    game_id: int
+    player_id: int
+    field_id: int
+
+
 class AttackField(Command):
     game_pk: int
     attacker_pk: int
