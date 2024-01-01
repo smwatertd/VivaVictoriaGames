@@ -1,10 +1,14 @@
-import asyncio
-
 from domain import events
 
 from infrastructure.ports import UnitOfWork
 
 from services import commands
+
+
+async def create_game(command: commands.CreateGame, uow: UnitOfWork) -> None:
+    async with uow:
+        await uow.games.create(command.creator_id)
+        await uow.commit()
 
 
 async def add_game_player(command: commands.AddUser, uow: UnitOfWork) -> None:
@@ -20,6 +24,32 @@ async def remove_game_player(command: commands.RemoveUser, uow: UnitOfWork) -> N
         player = await uow.players.get(command.user_pk)
         game = await uow.games.get(command.game_pk)
         game.remove_player(player)
+        await uow.commit()
+
+
+async def select_base(command: commands.SelectBase, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(command.game_id)
+        player = await uow.players.get(command.player_id)
+        field = await uow.fields.get(command.field_id)
+        game.select_player_base(player, field)
+        await uow.commit()
+
+
+async def mark_field(command: commands.MarkField, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(command.game_id)
+        player = await uow.players.get(command.player_id)
+        field = await uow.fields.get(command.field_id)
+        game.mark_field(player, field)
+        await uow.commit()
+
+
+async def send_marking_conflict_answer(command: commands.SendMarkingConflictAnswer, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(command.game_id)
+        player = await uow.players.get(command.player_id)
+        game.send_marking_conflict_answer(player, command.answer_id)
         await uow.commit()
 
 
@@ -40,12 +70,6 @@ async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
         await uow.commit()
 
 
-async def create_game(command: commands.CreateGame, uow: UnitOfWork) -> None:
-    async with uow:
-        await uow.games.create(command.creator_id)
-        await uow.commit()
-
-
 async def try_start_game(event: events.PlayerAdded, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
@@ -53,47 +77,134 @@ async def try_start_game(event: events.PlayerAdded, uow: UnitOfWork) -> None:
         await uow.commit()
 
 
-async def start_round(event: events.GameStarted, uow: UnitOfWork) -> None:
+async def start_selecting_base_stage(event: events.GameStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_round()
+        game.start_preparatory_stage()
         await uow.commit()
 
 
-async def start_round_timer(event: events.RoundStarted, uow: UnitOfWork) -> None:
+async def start_selecting_base_stage_round(event: events.PreparatoryStageStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_round_timer()
+        game.start_preparatory_stage_round()
         await uow.commit()
 
 
-async def check_round_outcome(event: events.RoundFinished, uow: UnitOfWork) -> None:
+async def stop_selecting_base_stage_round(event: events.BaseSelected, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.check_round_outcome()
+        game.stop_preparatory_stage_round()
         await uow.commit()
 
 
-async def start_duel_round_timer(event: events.DuelRoundStarted, uow: UnitOfWork) -> None:
+async def check_selecting_base_stage_round_outcome(
+    event: events.SelectingBaseStageRoundFinished,
+    uow: UnitOfWork,
+) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_duel_round_timer()
+        game.check_preparatory_stage_round_outcome()
         await uow.commit()
 
 
-async def finish_round(event: events.FieldCaptured, uow: UnitOfWork) -> None:
+async def start_capturing_stage(event: events.SelectingBaseStageFinished, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.finish_round()
+        game.start_capturing_stage()
         await uow.commit()
 
 
-async def start_duel(event: events.PlayerFieldAttacked, uow: UnitOfWork) -> None:
+async def start_capturing_stage_round(event: events.CapturingStageStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        defender, attacker = await uow.players.get(event.defender_id), await uow.players.get(event.attacker_id)
+        game.start_capturing_stage_round()
+        await uow.commit()
+
+
+async def check_are_all_players_marked_fields(event: events.FieldMarked, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.check_are_all_players_marked_fields()
+        await uow.commit()
+
+
+async def check_marking_conflict(event: events.FieldsMarked, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.check_marking_conflict()
+        await uow.commit()
+
+
+async def start_capturing_battle(event: events.MarkingConflictDetected, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        players = [await uow.players.get(player.id) for player in event.players]
+        field = await uow.fields.get(event.field_id)
+        game.start_capturing_battle(players, field)
+        await uow.commit()
+
+
+async def select_capturing_category(event: events.CapturingBattleStarted, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        category = await uow.categories.random()
+        game.set_capturing_category(category)
+        await uow.commit()
+
+
+async def select_capturing_question(event: events.CapturingBattleCategorySetted, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        question = await uow.questions.random_by_category(event.category_id)
+        game.set_capturing_question(question)
+        correct_answer = await uow.questions.get_correct_answer(question)
+        game.set_capturing_correct_answer(correct_answer)
+        await uow.commit()
+
+
+async def check_capturing_battle_outcome(event: events.CapturingBattlePlayerAnswered, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.check_capturing_battle_outcome()
+        await uow.commit()
+
+
+async def check_capturing_stage_round_outcome(event: events.CapturingStageRoundFinished, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.check_capturing_stage_round_outcome()
+        await uow.commit()
+
+
+async def start_battlings_stage(event: events.CapturingStageFinished, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.start_battlings_stage()
+        await uow.commit()
+
+
+async def start_battlings_stage_round(event: events.BattlingsStageStarted, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        game.start_battlings_stage_round()
+        await uow.commit()
+
+
+async def start_duel(event: events.FieldAttacked, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        attacker, defender = await uow.players.get(event.attacker_id), await uow.players.get(event.defender_id)
         field = await uow.fields.get(event.field_id)
         game.start_duel(attacker, defender, field)
+        await uow.commit()
+
+
+async def select_duel_category(event: events.DuelStarted, uow: UnitOfWork) -> None:
+    async with uow:
+        game = await uow.games.get(event.game_id)
+        category = await uow.categories.random()
+        game.set_duel_category(category)
         await uow.commit()
 
 
@@ -104,21 +215,20 @@ async def start_duel_round(event: events.DuelStarted, uow: UnitOfWork) -> None:
         await uow.commit()
 
 
-async def select_category(event: events.DuelRoundStarted, uow: UnitOfWork) -> None:
+async def select_duel_question(event: events.DuelRoundStarted, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        category_id = await uow.categories.random()
-        game.set_duel_category(category_id)
+        question = await uow.questions.random_by_category(game.get_duel_category())
+        game.set_duel_question(question)
+        correct_answer = await uow.questions.get_correct_answer(question)
+        game.set_duel_correct_answer(correct_answer)
         await uow.commit()
 
 
-async def select_question(event: events.DuelRoundStarted, uow: UnitOfWork) -> None:
+async def check_are_all_players_answered(event: events.PlayerAnswered, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        question_id = await uow.questions.random_by_category(event.category_id)
-        game.set_duel_question(question_id)
-        correct_answer_id = await uow.questions.get_correct_answer(question_id)
-        game.set_duel_correct_answer(correct_answer_id)
+        game.check_are_all_players_answered()
         await uow.commit()
 
 
@@ -129,73 +239,72 @@ async def check_duel_round_outcome(event: events.DuelRoundFinished, uow: UnitOfW
         await uow.commit()
 
 
-async def check_are_all_players_answered(event: events.PlayerAnswered, uow: UnitOfWork) -> None:
+async def finish_battlings_stage_round(event: events.DuelEnded, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.try_finish_duel_round()
+        game.finish_battlings_stage_round()
         await uow.commit()
 
 
-async def check_duel_results(event: events.DuelEnded, uow: UnitOfWork) -> None:
+async def check_battlings_stage_round_outcome(event: events.BattlingsStageRoundEnded, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.check_duel_results()
+        game.check_battlings_stage_round_outcome()
         await uow.commit()
 
 
-async def check_attack_outcome(event: events.FieldAttacked, uow: UnitOfWork) -> None:
+async def finish_game(event: events.BattlingsStageEnded, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        player = await uow.players.get(event.attacker_id)
-        field = await uow.fields.get(event.field_id)
-        game.check_attack_outcome(player, field)
-        await uow.commit()
-
-
-async def wait_round_timer(event: events.RoundTimerStarted, uow: UnitOfWork) -> None:
-    await asyncio.sleep(event.duration)
-    async with uow:
-        game = await uow.games.get(event.game_id)
-        game.try_finish_round_by_timeout(event.round_number)
-        await uow.commit()
-
-
-async def wait_duel_round_timer(event: events.DuelRoundTimerStarted, uow: UnitOfWork) -> None:
-    await asyncio.sleep(event.duration)
-    async with uow:
-        game = await uow.games.get(event.game_id)
-        game.try_finish_duel_round_by_timeout(event.round_number, event.duel_round_number)
+        game.finish()
         await uow.commit()
 
 
 COMMAND_HANDLERS = {
+    commands.CreateGame: create_game,
     commands.AddUser: add_game_player,
     commands.RemoveUser: remove_game_player,
+    commands.SelectBase: select_base,
+    commands.MarkField: mark_field,
+    commands.SendMarkingConflictAnswer: send_marking_conflict_answer,
     commands.AttackField: attack_field,
     commands.SendAnswer: send_answer,
-    commands.CreateGame: create_game,
 }
 
 EVENT_HANDLERS = {
     events.PlayerAdded: [try_start_game],
-    # events.PlayerRemoved: [],
-
-    events.GameStarted: [start_round],
-    # events.GameEnded: [],
-
-    events.RoundStarted: [start_round_timer],
-    events.RoundTimerStarted: [wait_round_timer],
-    events.FieldAttacked: [check_attack_outcome],
-    events.PlayerFieldAttacked: [start_duel],
-    events.FieldCaptured: [finish_round],
-    events.FieldDefended: [finish_round],
-    events.RoundFinished: [check_round_outcome],
-
-    events.DuelStarted: [select_category],
-    events.CategorySetted: [start_duel_round],
-    events.DuelRoundStarted: [select_question, start_duel_round_timer],
-    events.DuelRoundTimerStarted: [wait_duel_round_timer],
+    events.PlayerRemoved: [],
+    events.GameStarted: [start_selecting_base_stage],
+    events.GameEnded: [],
+    # The Selecting Base Stage
+    events.PreparatoryStageStarted: [start_selecting_base_stage_round],
+    events.SelectingBaseStageRoundStarted: [],
+    events.BaseSelected: [stop_selecting_base_stage_round],
+    events.SelectingBaseStageRoundFinished: [check_selecting_base_stage_round_outcome],
+    events.SelectingBaseStageFinished: [start_capturing_stage],
+    # The Capturing Stage
+    events.CapturingStageStarted: [start_capturing_stage_round],
+    events.CapturingStageRoundStarted: [],
+    events.FieldMarked: [check_are_all_players_marked_fields],
+    events.FieldsMarked: [check_marking_conflict],
+    events.MarkingConflictDetected: [start_capturing_battle],
+    events.CapturingBattleStarted: [select_capturing_category],
+    events.CapturingBattleCategorySetted: [select_capturing_question],
+    events.CapturingBattlePlayerAnswered: [check_capturing_battle_outcome],
+    events.CapturingStageRoundFinished: [check_capturing_stage_round_outcome],
+    events.CapturingStageFinished: [start_battlings_stage],
+    # The Battlings Stage
+    events.BattlingsStageStarted: [start_battlings_stage_round],
+    events.BattlingsStageRoundStarted: [],
+    events.FieldAttacked: [start_duel],
+    events.BattlingsStageRoundEnded: [check_battlings_stage_round_outcome],
+    events.BattlingsStageEnded: [finish_game],
+    # The Duel
+    events.DuelStarted: [select_duel_category],
+    events.DuelCategorySetted: [start_duel_round],
+    events.DuelRoundStarted: [select_duel_question],
+    events.QuestionSetted: [],
     events.PlayerAnswered: [check_are_all_players_answered],
     events.DuelRoundFinished: [check_duel_round_outcome],
-    events.DuelEnded: [check_duel_results],
+    events.DuelEnded: [finish_battlings_stage_round],
 }
