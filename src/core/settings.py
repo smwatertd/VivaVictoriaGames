@@ -65,6 +65,8 @@ class GameSettings(BaseSettings):
     preparatory_stage_round_time_seconds: int = 30
     base_field_value: int = 10
 
+    capturing_stage_round_time_seconds: int = 30
+
     model_config = SettingsConfigDict(
         env_file='.env',
         env_prefix='GAME_',
