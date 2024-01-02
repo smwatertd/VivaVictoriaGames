@@ -28,7 +28,9 @@ class SQLAlchemyGamesRepository(GamesRepository):
                 .joinedload(models.Capture._marked_fields)
                 .joinedload(models.MarkField._field),
                 joinedload(models.Game._battle).joinedload(models.Battle._duel),
-                joinedload(models.Game._players).joinedload(models.Player._fields),
+                joinedload(models.Game._players)
+                .joinedload(models.Player._fields)
+                .joinedload(models.CapturedField._field),
                 joinedload(models.Game._players)
                 .joinedload(models.Player._marked_field)
                 .joinedload(models.MarkField._field),

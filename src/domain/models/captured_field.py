@@ -13,9 +13,18 @@ class CapturedField:
         self._owner = owner
         self._is_base = is_base
 
+    def get_id(self) -> int:
+        return self._field.get_id()
+
+    def get_value(self) -> int:
+        return self._field.get_value()
+
     def mark_as_base(self) -> None:
         self._is_base = True
         self._field.mark_as_base()
+
+    def is_base(self) -> bool:
+        return self._is_base
 
     def get_owner(self) -> 'Player':
         return self._owner

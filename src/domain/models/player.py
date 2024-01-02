@@ -35,6 +35,12 @@ class Player:
         assert self._connected_at
         return self._connected_at
 
+    def get_base(self) -> 'CapturedField':
+        for field in self._fields:
+            if field.is_base():
+                return field
+        raise ValueError('Player has no base field')
+
     def set_answer(self, answer: int) -> None:
         self._answer_id = answer
         self._answered_at = datetime.utcnow()

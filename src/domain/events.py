@@ -1,3 +1,5 @@
+from enum import Enum
+
 from pydantic import BaseModel
 
 
@@ -9,31 +11,82 @@ class GameEvent(Event):
     game_id: int
 
 
-class ConnectedPlayer(BaseModel):
+class Player(BaseModel):
     id: int
+
+
+class Field(BaseModel):
+    id: int
+
+
+class GameResultLine(BaseModel):
+    place: int
+    player: Player
+    score: int
+
+
+class StageType(str, Enum):
+    PREPARATORY = 'PREPARATORY'
+    CAPTURING = 'CAPTURING'
+    BATTLINGS = 'BATTLINGS'
+
+
+class ResultType(str, Enum):
+    CAPTURED = 'CAPTURED'
+    DEFENDED = 'DEFENDED'
+
+
+class FieldCaptured(BaseModel):
+    field: Field
+    player: Player
+    new_field_value: int
+
+
+class FieldDefended(BaseModel):
+    field: Field
+    new_field_value: int
 
 
 class PlayerAdded(GameEvent):
-    player_id: int
-    connected_players: list[ConnectedPlayer]
+    player: Player
+    connected_players: list[Player]
 
 
-class OrderPlayer(BaseModel):
-    id: int
-
-
-class GameField(BaseModel):
-    id: int
+class PlayerRemoved(GameEvent):
+    player: Player
 
 
 class GameStarted(GameEvent):
-    fields: list[GameField]
-    order: list[OrderPlayer]
+    fields: list[Field]
+    order: list[Player]
 
 
-class PlayerRemoved(Event):
-    game_id: int
-    player_id: int
+class GameFinished(GameEvent):
+    results: list[GameResultLine]
+
+
+class LimitedByRoundsStageStarted(GameEvent):
+    stage_type: StageType
+    rounds_count: int
+
+
+class OrderedRoundStarted(GameEvent):
+    player: Player
+    round_number: int
+    duration_seconds: int
+
+
+class RoundFinished(GameEvent):
+    result_type: ResultType
+    result: FieldDefended | FieldCaptured
+
+
+class StageFinished(GameEvent):
+    stage_type: StageType
+
+
+class SelectingBaseStageRoundFinished(GameEvent):
+    pass
 
 
 class FieldAttacked(Event):
@@ -41,13 +94,6 @@ class FieldAttacked(Event):
     attacker_id: int
     defender_id: int
     field_id: int
-
-
-class FieldCaptured(Event):
-    game_id: int
-    field_id: int
-    capturer_id: int
-    new_field_value: int
 
 
 class PlayerFieldAttacked(Event):
@@ -82,15 +128,6 @@ class RoundStarted(Event):
     player_order_id: int
 
 
-class RoundFinished(Event):
-    game_id: int
-    round_number: int
-
-
-class GameEnded(Event):
-    game_id: int
-
-
 class DuelRoundStarted(Event):
     game_id: int
     round_number: int
@@ -103,12 +140,6 @@ class CategorySetted(Event):
 
 class DuelRoundFinished(Event):
     game_id: int
-
-
-class FieldDefended(Event):
-    game_id: int
-    field_id: int
-    new_field_value: int
 
 
 class DuelEnded(Event):
@@ -153,10 +184,6 @@ class SelectingBaseStageRoundStarted(GameEvent):
     player_id: int
     duration: int
     round_number: int
-
-
-class SelectingBaseStageRoundFinished(GameEvent):
-    pass
 
 
 class PlayerSelectedBase(GameEvent):
@@ -221,8 +248,8 @@ class CapturingStageRoundFinished(GameEvent):
 
 
 class BaseSelected(GameEvent):
-    player_id: int
-    field_id: int
+    player: Player
+    field: Field
 
 
 class FieldMarked(GameEvent):

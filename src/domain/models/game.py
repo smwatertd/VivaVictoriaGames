@@ -48,6 +48,34 @@ class Game(Model):
         if self._is_full():
             self._start()
 
+    def start_stage(self) -> None:
+        if self._state == enums.GameState.IN_PROCESS:
+            self.start_preparatory_stage()
+        else:
+            raise ValueError('Game is not in process')
+
+    def start_round(self) -> None:
+        if self._state == enums.GameState.PREPARATORY_STAGE:
+            self.start_preparatory_stage_round()
+
+    def finish_round(self) -> None:
+        if self._state == enums.GameState.PREPARATORY_STAGE:
+            self.finish_preparatory_stage_round()
+
+    def check_round_outcome(self) -> None:
+        if self._state == enums.GameState.PREPARATORY_STAGE:
+            self.check_preparatory_stage_round_outcome()
+
+    def check_stage_outcome(self, finished_stage: events.StageType) -> None:
+        if finished_stage == events.StageType.PREPARATORY:
+            self.start_capturing_stage()
+        else:
+            raise ValueError('Game is not in process')
+
+    def finish(self) -> None:
+        self._state = enums.GameState.ENDED
+        self.register_event(events.GameFinished(game_id=self.get_id(), results=[]))
+
     ###########################################################
     # Preparation Stage
     ###########################################################
@@ -55,8 +83,9 @@ class Game(Model):
         self._preparation.start()
         self._state = enums.GameState.PREPARATORY_STAGE
         self.register_event(
-            events.PreparatoryStageStarted(
+            events.LimitedByRoundsStageStarted(
                 game_id=self.get_id(),
+                stage_type=events.StageType.PREPARATORY,
                 rounds_count=self._get_preparatory_stage_rounds_count(),
             ),
         )
@@ -64,11 +93,11 @@ class Game(Model):
     def start_preparatory_stage_round(self) -> None:
         self._select_player_order(self._preparation.get_round_number())
         self.register_event(
-            events.SelectingBaseStageRoundStarted(
+            events.OrderedRoundStarted(
                 game_id=self.get_id(),
-                player_id=self._player_order.get_id(),
-                duration=game_settings.preparatory_stage_round_time_seconds,
+                player=events.Player(id=self._player_order.get_id()),
                 round_number=self._preparation.get_round_number(),
+                duration_seconds=self._get_preparatory_stage_round_seconds_duration(),
             ),
         )
 
@@ -77,15 +106,26 @@ class Game(Model):
         self.register_event(
             events.BaseSelected(
                 game_id=self.get_id(),
-                player_id=player.get_id(),
-                field_id=field.get_id(),
-                new_field_value=field.get_value(),
+                player=events.Player(id=player.get_id()),
+                field=events.Field(id=field.get_id()),
             ),
         )
 
-    def stop_preparatory_stage_round(self) -> None:
+    def finish_preparatory_stage_round(self) -> None:
+        player = self._player_order
+        base = player.get_base()
         self._preparation.stop_round()
-        self.register_event(events.SelectingBaseStageRoundFinished(game_id=self.get_id()))
+        self.register_event(
+            events.RoundFinished(
+                game_id=self.get_id(),
+                result_type=events.ResultType.CAPTURED,
+                result=events.FieldCaptured(
+                    field=events.Field(id=base.get_id()),
+                    player=events.Player(id=player.get_id()),
+                    new_field_value=base.get_value(),
+                ),
+            ),
+        )
 
     def check_preparatory_stage_round_outcome(self) -> None:
         if self._is_preparatory_stage_continuing():
@@ -240,10 +280,6 @@ class Game(Model):
     def finish_battlings_stage_round(self) -> None:
         self.register_event(events.BattlingsStageEnded(game_id=self.get_id()))
 
-    def finish(self) -> None:
-        self._state = enums.GameState.ENDED
-        self.register_event(events.GameEnded(game_id=self.get_id()))
-
     ###########################################################
     # Private methods
     ###########################################################
@@ -259,14 +295,14 @@ class Game(Model):
         self.register_event(
             events.PlayerAdded(
                 game_id=self.get_id(),
-                player_id=player.get_id(),
-                connected_players=[events.ConnectedPlayer(id=player.get_id()) for player in self._players],
+                player=events.Player(id=player.get_id()),
+                connected_players=[events.Player(id=player.get_id()) for player in self._players],
             ),
         )
 
     def _remove_player(self, player: Player) -> None:
         self._players.remove(player)
-        self.register_event(events.PlayerRemoved(game_id=self.get_id(), player_id=player.get_id()))
+        self.register_event(events.PlayerRemoved(game_id=self.get_id(), player=events.Player(id=player.get_id())))
 
     def _is_full(self) -> bool:
         return len(self._players) == game_settings.players_count_to_start
@@ -274,26 +310,28 @@ class Game(Model):
     def _start(self) -> None:
         self._round_number = 1
         self._state = enums.GameState.IN_PROCESS
+        sorted_fields = sorted(self._fields, key=lambda x: x.get_id())
+        order = self._player_turn_selector.get_order(self._players)
         self.register_event(
             events.GameStarted(
                 game_id=self.get_id(),
-                fields=sorted([events.GameField(id=field.get_id()) for field in self._fields], key=lambda x: x.id),
-                order=[
-                    events.OrderPlayer(id=player.get_id())
-                    for player in self._player_turn_selector.get_order(self._players)
-                ],
+                fields=[events.Field(id=field.get_id()) for field in sorted_fields],
+                order=[events.Player(id=player.get_id()) for player in order],
             ),
         )
 
     def _get_preparatory_stage_rounds_count(self) -> int:
         return self._get_players_count()
 
+    def _get_preparatory_stage_round_seconds_duration(self) -> int:
+        return game_settings.preparatory_stage_round_time_seconds
+
     def _get_players_count(self) -> int:
         return len(self._players)
 
     def _stop_selection_base_stage(self) -> None:
         self._state = enums.GameState.IN_PROCESS
-        self.register_event(events.SelectingBaseStageFinished(game_id=self.get_id()))
+        self.register_event(events.StageFinished(game_id=self.get_id(), stage_type=events.StageType.PREPARATORY))
 
     def _stop_capturing_stage(self) -> None:
         self.register_event(events.CapturingStageFinished(game_id=self.get_id()))

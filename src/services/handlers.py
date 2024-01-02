@@ -77,42 +77,77 @@ async def try_start_game(event: events.PlayerAdded, uow: UnitOfWork) -> None:
         await uow.commit()
 
 
-async def start_selecting_base_stage(event: events.GameStarted, uow: UnitOfWork) -> None:
+async def start_stage(event: events.GameEvent, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_preparatory_stage()
+        game.start_stage()
         await uow.commit()
 
 
-async def start_selecting_base_stage_round(event: events.PreparatoryStageStarted, uow: UnitOfWork) -> None:
+# async def start_selecting_base_stage(event: events.GameStarted, uow: UnitOfWork) -> None:
+#     async with uow:
+#         game = await uow.games.get(event.game_id)
+#         game.start_preparatory_stage()
+#         await uow.commit()
+
+
+async def start_round(event: events.GameEvent, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_preparatory_stage_round()
+        game.start_round()
         await uow.commit()
 
 
-async def stop_selecting_base_stage_round(event: events.BaseSelected, uow: UnitOfWork) -> None:
+# async def start_selecting_base_stage_round(event: events.PreparatoryStageStarted, uow: UnitOfWork) -> None:
+#     async with uow:
+#         game = await uow.games.get(event.game_id)
+#         game.start_preparatory_stage_round()
+#         await uow.commit()
+
+
+async def finish_round(event: events.GameEvent, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.stop_preparatory_stage_round()
+        game.finish_round()
         await uow.commit()
 
 
-async def check_selecting_base_stage_round_outcome(
-    event: events.SelectingBaseStageRoundFinished,
-    uow: UnitOfWork,
-) -> None:
+# async def stop_selecting_base_stage_round(event: events.BaseSelected, uow: UnitOfWork) -> None:
+#     async with uow:
+#         game = await uow.games.get(event.game_id)
+#         game.stop_preparatory_stage_round()
+#         await uow.commit()
+
+
+async def check_round_outcome(event: events.GameEvent, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.check_preparatory_stage_round_outcome()
+        game.check_round_outcome()
         await uow.commit()
 
 
-async def start_capturing_stage(event: events.SelectingBaseStageFinished, uow: UnitOfWork) -> None:
+# async def check_selecting_base_stage_round_outcome(
+#     event: events.SelectingBaseStageRoundFinished,
+#     uow: UnitOfWork,
+# ) -> None:
+#     async with uow:
+#         game = await uow.games.get(event.game_id)
+#         game.check_preparatory_stage_round_outcome()
+#         await uow.commit()
+
+
+async def check_stage_outcome(event: events.StageFinished, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.start_capturing_stage()
+        game.check_stage_outcome(event.stage_type)
         await uow.commit()
+
+
+# async def start_capturing_stage(event: events.SelectingBaseStageFinished, uow: UnitOfWork) -> None:
+#     async with uow:
+#         game = await uow.games.get(event.game_id)
+#         game.start_capturing_stage()
+#         await uow.commit()
 
 
 async def start_capturing_stage_round(event: events.CapturingStageStarted, uow: UnitOfWork) -> None:
@@ -274,14 +309,14 @@ COMMAND_HANDLERS = {
 EVENT_HANDLERS = {
     events.PlayerAdded: [try_start_game],
     events.PlayerRemoved: [],
-    events.GameStarted: [start_selecting_base_stage],
-    events.GameEnded: [],
+    events.GameStarted: [start_stage],
+    events.GameFinished: [],
     # The Selecting Base Stage
-    events.PreparatoryStageStarted: [start_selecting_base_stage_round],
-    events.SelectingBaseStageRoundStarted: [],
-    events.BaseSelected: [stop_selecting_base_stage_round],
-    events.SelectingBaseStageRoundFinished: [check_selecting_base_stage_round_outcome],
-    events.SelectingBaseStageFinished: [start_capturing_stage],
+    events.LimitedByRoundsStageStarted: [start_round],
+    events.OrderedRoundStarted: [],
+    events.BaseSelected: [finish_round],
+    events.RoundFinished: [check_round_outcome],
+    events.StageFinished: [check_stage_outcome],
     # The Capturing Stage
     events.CapturingStageStarted: [start_capturing_stage_round],
     events.CapturingStageRoundStarted: [],
