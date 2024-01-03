@@ -99,12 +99,12 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
             ),
         )
 
-    async def send_marking_conflict_answer(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
+    async def send_answer(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
         await self._handler_command(
-            commands.SendMarkingConflictAnswer(
-                game_id=self.data.game_pk,
-                player_id=self.data.user_pk,
-                answer_id=int(data.get('answer_pk', 0)),
+            commands.SendAnswer(
+                game_pk=self.data.game_pk,
+                player_pk=self.data.user_pk,
+                answer_pk=int(data.get('answer_pk', 0)),
             ),
         )
 
@@ -114,15 +114,6 @@ class GamesWebSocketEndpoint(BaseGamesWebSocketEndpoint):
                 game_pk=self.data.game_pk,
                 attacker_pk=self.data.user_pk,
                 field_pk=int(data.get('field_pk', 0)),
-            ),
-        )
-
-    async def send_answer(self, websocket: WebSocket, data: dict[str, str | int]) -> None:
-        await self._handler_command(
-            commands.SendAnswer(
-                game_pk=self.data.game_pk,
-                player_pk=self.data.user_pk,
-                answer_pk=int(data.get('answer_pk', 0)),
             ),
         )
 
