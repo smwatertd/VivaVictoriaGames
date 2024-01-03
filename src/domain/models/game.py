@@ -3,10 +3,14 @@ from core.settings import game_settings
 from domain import enums, events, exceptions
 from domain.models.battle import Battle
 from domain.models.capture import Capture
+from domain.models.category import Category
 from domain.models.field import Field
+from domain.models.game_result_line import GameResultLine
 from domain.models.model import Model
 from domain.models.player import Player
+from domain.models.player_answer import PlayerAnswer
 from domain.models.preparation import Preparation
+from domain.models.question import Question
 from domain.strategies import PlayerTurnSelector
 
 
@@ -48,33 +52,72 @@ class Game(Model):
         if self._is_full():
             self._start()
 
-    def start_stage(self) -> None:
-        if self._state == enums.GameState.IN_PROCESS:
-            self.start_preparatory_stage()
+    def check_stage_outcome(self, finished_stage: events.StageType) -> None:
+        if finished_stage == events.StageType.PREPARATORY:
+            self.start_capturing_stage()
+        elif finished_stage == events.StageType.CAPTURING:
+            self.start_battlings_stage()
         else:
-            raise ValueError('Game is not in process')
+            self.finish()
 
     def start_round(self) -> None:
         if self._state == enums.GameState.PREPARATORY_STAGE:
             self.start_preparatory_stage_round()
+        elif self._state == enums.GameState.CAPTURING_STAGE:
+            self.start_capturing_stage_round()
+        elif self._state == enums.GameState.BATTLING_STAGE:
+            self.start_battlings_stage_round()
+        else:
+            raise ValueError(f'Invalid game state: {self._state} in start_round')
 
     def finish_round(self) -> None:
         if self._state == enums.GameState.PREPARATORY_STAGE:
             self.finish_preparatory_stage_round()
+        elif self._state == enums.GameState.CAPTURING_STAGE:
+            self.finish_capturing_stage_round()
+        elif self._state == enums.GameState.BATTLING_STAGE:
+            self.finish_battlings_stage_round()
+        else:
+            raise ValueError(f'Invalid game state: {self._state} in finish_round')
 
     def check_round_outcome(self) -> None:
         if self._state == enums.GameState.PREPARATORY_STAGE:
             self.check_preparatory_stage_round_outcome()
-
-    def check_stage_outcome(self, finished_stage: events.StageType) -> None:
-        if finished_stage == events.StageType.PREPARATORY:
-            self.start_capturing_stage()
+        elif self._state == enums.GameState.CAPTURING_STAGE:
+            self.check_capturing_stage_round_outcome()
+        elif self._state == enums.GameState.BATTLING_STAGE:
+            self.check_battlings_stage_round_outcome()
         else:
             raise ValueError('Game is not in process')
 
-    def finish(self) -> None:
-        self._state = enums.GameState.ENDED
-        self.register_event(events.GameFinished(game_id=self.get_id(), results=[]))
+    def set_question(self, question: Question) -> None:
+        if self._state == enums.GameState.CAPTURING_STAGE:
+            self.set_capturing_question(question)
+        elif self._state == enums.GameState.DUELING:
+            self.set_duel_question(question)
+        else:
+            raise ValueError('Game is not in process')
+
+    def set_player_answer(self, player: Player, answer: PlayerAnswer) -> None:
+        self._set_player_answer(player, answer)
+
+    def finish_battle_round(self) -> None:
+        if self._state == enums.GameState.CAPTURING_STAGE:
+            self.finish_capturing_battle_round()
+        elif self._state == enums.GameState.DUELING:
+            self.finish_duel_round()
+
+    def check_battle_round_outcome(self) -> None:
+        if self._state == enums.GameState.CAPTURING_STAGE:
+            self.finish_capturing_stage_round()
+        elif self._state == enums.GameState.DUELING:
+            self.check_duel_round_outcome()
+
+    def check_are_all_players_answered(self) -> None:
+        if self._state == enums.GameState.CAPTURING_STAGE:
+            self._check_are_all_marking_battle_players_answered()
+        elif self._state == enums.GameState.DUELING:
+            self._check_are_all_duel_players_answered()
 
     ###########################################################
     # Preparation Stage
@@ -83,21 +126,22 @@ class Game(Model):
         self._preparation.start()
         self._state = enums.GameState.PREPARATORY_STAGE
         self.register_event(
-            events.LimitedByRoundsStageStarted(
+            events.StageStarted(
                 game_id=self.get_id(),
                 stage_type=events.StageType.PREPARATORY,
-                rounds_count=self._get_preparatory_stage_rounds_count(),
+                stage_info=events.StageInfo(rounds_count=self._get_preparatory_stage_rounds_count()),
             ),
         )
 
     def start_preparatory_stage_round(self) -> None:
         self._select_player_order(self._preparation.get_round_number())
         self.register_event(
-            events.OrderedRoundStarted(
+            events.RoundStarted(
                 game_id=self.get_id(),
-                player=events.Player(id=self._player_order.get_id()),
+                round_type=events.RoundType.ORDERED,
                 round_number=self._preparation.get_round_number(),
                 duration_seconds=self._get_preparatory_stage_round_seconds_duration(),
+                player=events.Player(id=self._player_order.get_id()),
             ),
         )
 
@@ -108,24 +152,13 @@ class Game(Model):
                 game_id=self.get_id(),
                 player=events.Player(id=player.get_id()),
                 field=events.Field(id=field.get_id()),
+                new_field_value=field.get_value(),
             ),
         )
 
     def finish_preparatory_stage_round(self) -> None:
-        player = self._player_order
-        base = player.get_base()
         self._preparation.stop_round()
-        self.register_event(
-            events.RoundFinished(
-                game_id=self.get_id(),
-                result_type=events.ResultType.CAPTURED,
-                result=events.FieldCaptured(
-                    field=events.Field(id=base.get_id()),
-                    player=events.Player(id=player.get_id()),
-                    new_field_value=base.get_value(),
-                ),
-            ),
-        )
+        self.register_event(events.RoundFinished(game_id=self.get_id()))
 
     def check_preparatory_stage_round_outcome(self) -> None:
         if self._is_preparatory_stage_continuing():
@@ -139,29 +172,40 @@ class Game(Model):
     def start_capturing_stage(self) -> None:
         self._capture.start()
         self._state = enums.GameState.CAPTURING_STAGE
-        self.register_event(events.CapturingStageStarted(game_id=self.get_id()))
+        self.register_event(events.StageStarted(game_id=self.get_id(), stage_type=events.StageType.CAPTURING))
 
     def start_capturing_stage_round(self) -> None:
         self._capture.start_round()
+        self._state = enums.GameState.MARKS_WAITING
         self.register_event(
-            events.CapturingStageRoundStarted(
+            events.RoundStarted(
                 game_id=self.get_id(),
-                duration=game_settings.capturing_stage_round_time_seconds,
+                round_type=events.RoundType.UNORDERED,
                 round_number=self._capture.get_round_number(),
+                duration_seconds=self._get_capturing_stage_round_seconds_duration(),
             ),
         )
 
     def mark_field(self, player: Player, field: Field) -> None:
         self._capture.mark_field(player, field)
-        self.register_event(events.FieldMarked(game_id=self.get_id(), player_id=player.get_id()))
+        self.register_event(
+            events.PlayerImplicitlyMarkedField(
+                game_id=self.get_id(),
+                player=events.Player(id=player.get_id()),
+            ),
+        )
 
     def check_are_all_players_marked_fields(self) -> None:
         if self._are_all_players_marked_fields():
+            self._state = enums.GameState.CAPTURING_STAGE
             self.register_event(
-                events.FieldsMarked(
+                events.AllPlayersMarkedFields(
                     game_id=self.get_id(),
                     marked_fields=[
-                        events.PlayerMarkedField(player_id=player.get_id(), field_id=player.get_marked_field().get_id())
+                        events.MarkedField(
+                            player=events.Player(id=player.get_id()),
+                            field=events.Field(id=player.get_marked_field().get_id()),
+                        )
                         for player in self._players
                     ],
                 ),
@@ -169,27 +213,55 @@ class Game(Model):
 
     def check_marking_conflict(self) -> None:
         if self._capture.has_marking_conflict():
-            self._start_capturing_battle()
+            self._detect_marking_conflict()
         else:
-            self._stop_capture_stage_round()
+            self._capture_marked_fields()
 
-    def set_capturing_category(self, category: int) -> None:
-        self.register_event(events.CapturingBattleCategorySetted(game_id=self.get_id(), category_id=category))
+    def start_marking_battle(self, players: list[Player], field: Field, category: Category) -> None:
+        self.register_event(
+            events.MarkingBattleStarted(
+                game_id=self.get_id(),
+                players=[events.Player(id=player.get_id()) for player in players],
+                field=events.Field(id=field.get_id()),
+                category=events.Category(id=category.id, name=category.name),
+            ),
+        )
 
-    def set_capturing_question(self, question: int) -> None:
-        self.register_event(events.CapturingBattleQuestionSetted(game_id=self.get_id(), question_id=question))
+    def set_capturing_question(self, question: Question) -> None:
+        self._capture.set_correct_answer(question.correct_answer)
+        self.register_event(
+            events.QuestionSetted(
+                game_id=self.get_id(),
+                question=events.Question(
+                    body=question.body,
+                    answers=[events.Answer(id=answer.id, body=answer.body) for answer in question.answers],
+                ),
+            ),
+        )
 
-    def set_capturing_correct_answer(self, answer: int) -> None:
-        self._capture.set_correct_answer(answer)
-
-    def send_marking_conflict_answer(self, player: Player, answer: int) -> None:
-        self._capture.set_player_answer(player, answer)
-        self.register_event(events.CapturingBattlePlayerAnswered(game_id=self.get_id(), player_id=player.get_id()))
-
-    def check_capturing_battle_outcome(self) -> None:
+    def _check_are_all_marking_battle_players_answered(self) -> None:
         if self._capture.are_all_conflict_players_answered():
-            self._stop_capturing_battle()
-            self._stop_capture_stage_round()
+            self.register_event(
+                events.AllPlayersAnswered(
+                    game_id=self.get_id(),
+                    answers=[
+                        events.PlayerAnswer(
+                            player=events.Player(id=player.get_id()),
+                            answer=events.ExplicitAnswer(id=player.get_answer().id),
+                        )
+                        for player in self._players
+                    ],
+                ),
+            )
+
+    def capture_marked_fields(self) -> None:
+        self._capture_marked_fields()
+
+    def finish_capturing_battle_round(self) -> None:
+        self._stop_marking_battle()
+
+    def finish_capturing_stage_round(self) -> None:
+        self.register_event(events.RoundFinished(game_id=self.get_id()))
 
     def check_capturing_stage_round_outcome(self) -> None:
         if self._is_capturing_stage_continuing():
@@ -204,19 +276,22 @@ class Game(Model):
         self._battle.start()
         self._state = enums.GameState.BATTLING_STAGE
         self.register_event(
-            events.BattlingsStageStarted(
+            events.StageStarted(
                 game_id=self.get_id(),
-                rounds_count=game_settings.battlings_stage_rounds_count,
+                stage_type=events.StageType.BATTLINGS,
+                stage_info=events.StageInfo(rounds_count=self._get_battlings_stage_rounds_count()),
             ),
         )
 
     def start_battlings_stage_round(self) -> None:
         self._select_player_order(self._battle.get_round_number())
         self.register_event(
-            events.BattlingsStageRoundStarted(
+            events.RoundStarted(
                 game_id=self.get_id(),
-                player_id=self._player_order.get_id(),
+                round_type=events.RoundType.ORDERED,
                 round_number=self._battle.get_round_number(),
+                duration_seconds=self._get_battlings_stage_round_seconds_duration(),
+                player=events.Player(id=self._player_order.get_id()),
             ),
         )
 
@@ -224,61 +299,85 @@ class Game(Model):
         self.register_event(
             events.FieldAttacked(
                 game_id=self.get_id(),
-                attacker_id=attacker.get_id(),
-                defender_id=field.get_owner().get_id(),
-                field_id=field.get_id(),
+                attacker=events.Player(id=attacker.get_id()),
+                defender=events.Player(id=field.get_owner().get_id()),
+                field=events.Field(id=field.get_id()),
             ),
         )
 
-    def start_duel(self, attacker: Player, defender: Player, field: Field) -> None:
+    def start_duel(self, attacker: Player, defender: Player, field: Field, category: Category) -> None:
         self._state = enums.GameState.DUELING
-        self._battle.start_duel(attacker, defender, field)
+        self._battle.start_duel(attacker, defender, field, category)
         self.register_event(
             events.DuelStarted(
                 game_id=self.get_id(),
-                attacker_id=attacker.get_id(),
-                defender_id=defender.get_id(),
-                field_id=field.get_id(),
+                attacker=events.Player(id=attacker.get_id()),
+                defender=events.Player(id=defender.get_id()),
+                field=events.Field(id=field.get_id()),
+                category=events.Category(id=category.id, name=category.name),
             ),
         )
 
-    def set_duel_category(self, category: int) -> None:
-        self._battle.set_duel_category(category)
-        self.register_event(events.DuelCategorySetted(game_id=self.get_id(), category_id=category))
-
     def start_duel_round(self) -> None:
         self._battle.start_duel_round()
-        self.register_event(events.DuelRoundStarted(game_id=self.get_id(), round_number=self._battle.get_duel_round()))
+        self.register_event(
+            events.DuelRoundStarted(
+                game_id=self.get_id(),
+                round_number=self._battle.get_duel_round(),
+                duration_seconds=self._get_duel_round_seconds_duration(),
+                category=events.Category(
+                    id=self._battle.get_duel_category().id,
+                    name=self._battle.get_duel_category().name,
+                ),
+            ),
+        )
 
-    def set_duel_question(self, question: int) -> None:
-        self.register_event(events.QuestionSetted(game_id=self.get_id(), question_id=question))
+    def set_duel_question(self, question: Question) -> None:
+        self._battle.set_duel_correct_answer(answer=question.correct_answer)
+        self.register_event(
+            events.QuestionSetted(
+                game_id=self.get_id(),
+                question=events.Question(
+                    body=question.body,
+                    answers=[events.Answer(id=answer.id, body=answer.body) for answer in question.answers],
+                ),
+            ),
+        )
 
-    def set_duel_correct_answer(self, answer: int) -> None:
-        self._battle.set_duel_correct_answer(answer)
-
-    def set_player_answer(self, player: Player, answer: int) -> None:
-        self._battle.set_player_answer(player, answer)
-        self.register_event(events.PlayerAnswered(game_id=self.get_id(), player_id=player.get_id()))
-
-    def check_are_all_players_answered(self) -> None:
+    def _check_are_all_duel_players_answered(self) -> None:
         if self._battle.are_all_duel_players_answered():
-            self.register_event(events.DuelRoundFinished(game_id=self.get_id()))
+            self.register_event(
+                events.AllPlayersAnswered(
+                    game_id=self.get_id(),
+                    answers=[
+                        events.PlayerAnswer(
+                            player=events.Player(id=player.get_id()),
+                            answer=events.ExplicitAnswer(id=player.get_answer().id),
+                        )
+                        for player in self._players
+                    ],
+                ),
+            )
+
+    def finish_duel_round(self) -> None:
+        self._battle.finish_duel_round()
+        self.register_event(events.DuelRoundFinished(game_id=self.get_id()))
 
     def check_duel_round_outcome(self) -> None:
         if self._battle.is_duel_continuing():
             self.start_duel_round()
         else:
-            self._battle.stop_duel()
-            self.register_event(events.DuelEnded(game_id=self.get_id()))
+            self._finish_duel()
+
+    def finish_battlings_stage_round(self) -> None:
+        self._battle.finish_round()
+        self.register_event(events.RoundFinished(game_id=self.get_id(), result_type=events.ResultType.DEFENDED))
 
     def check_battlings_stage_round_outcome(self) -> None:
         if self._is_battle_stage_continuing():
             self.start_battlings_stage_round()
         else:
             self._stop_battlings_stage()
-
-    def finish_battlings_stage_round(self) -> None:
-        self.register_event(events.BattlingsStageEnded(game_id=self.get_id()))
 
     ###########################################################
     # Private methods
@@ -302,6 +401,7 @@ class Game(Model):
 
     def _remove_player(self, player: Player) -> None:
         self._players.remove(player)
+        player.on_disconnect()
         self.register_event(events.PlayerRemoved(game_id=self.get_id(), player=events.Player(id=player.get_id())))
 
     def _is_full(self) -> bool:
@@ -334,11 +434,26 @@ class Game(Model):
         self.register_event(events.StageFinished(game_id=self.get_id(), stage_type=events.StageType.PREPARATORY))
 
     def _stop_capturing_stage(self) -> None:
-        self.register_event(events.CapturingStageFinished(game_id=self.get_id()))
+        self.register_event(events.StageFinished(game_id=self.get_id(), stage_type=events.StageType.CAPTURING))
+
+    def _get_capturing_stage_round_seconds_duration(self) -> int:
+        return game_settings.capturing_stage_round_time_seconds
+
+    def _set_player_answer(self, player: Player, answer: PlayerAnswer) -> None:
+        player.set_answer(answer)
+        self.register_event(
+            events.PlayerAnsweredImplicitly(
+                game_id=self.get_id(),
+                player=events.Player(id=player.get_id()),
+            ),
+        )
+
+    def _get_duel_round_seconds_duration(self) -> int:
+        return game_settings.duel_round_time_seconds
 
     def _stop_battlings_stage(self) -> None:
         self._state = enums.GameState.IN_PROCESS
-        self.register_event(events.BattlingsStageEnded(game_id=self.get_id()))
+        self.register_event(events.StageFinished(game_id=self.get_id(), stage_type=events.StageType.BATTLINGS))
 
     def _is_preparatory_stage_continuing(self) -> bool:
         return not self._get_players_count() == self._preparation.get_round_number() - 1
@@ -352,47 +467,98 @@ class Game(Model):
     def _are_all_players_marked_fields(self) -> bool:
         return all(player.is_marked_field() for player in self._players)
 
-    def _start_capturing_battle(self) -> None:
-        conflict = self._capture.get_marking_conflict()
-        self.register_event(
-            events.CapturingBattleStarted(
-                game_id=self.get_id(),
-                players=[events.CaptureBattlePlayer(id=player.get_id()) for player in conflict.players],
-                field_id=conflict.field.get_id(),
-            ),
-        )
-
     def _detect_marking_conflict(self) -> None:
         conflict = self._capture.get_marking_conflict()
         self.register_event(
             events.MarkingConflictDetected(
                 game_id=self.get_id(),
-                field_id=conflict.field.get_id(),
-                players=[events.MarkingConflictPlayer(id=player.get_id()) for player in conflict.players],
+                field=events.Field(id=conflict.field.get_id()),
+                players=[events.Player(id=player.get_id()) for player in conflict.players],
             ),
         )
 
-    def _stop_capturing_battle(self) -> None:
-        self._capture.stop_battle()
-
-    def _stop_capture_stage_round(self) -> None:
-        round_result = self._capture.stop_round()
+    def _stop_marking_battle(self) -> None:
+        winner = self._capture.finish_marking_battle()
         self.register_event(
-            events.CapturingStageRoundFinished(
+            events.MarkingBattleFinished(
                 game_id=self.get_id(),
-                captured_fields=[
-                    events.CapturedField(
-                        field_id=result_line.field_id,
-                        player_id=result_line.player_id,
-                        new_field_value=result_line.new_field_value,
+                winner=events.Player(id=winner.get_id()),
+            ),
+        )
+
+    def _get_battlings_stage_rounds_count(self) -> int:
+        return game_settings.battlings_stage_rounds_count
+
+    def _get_battlings_stage_round_seconds_duration(self) -> int:
+        return game_settings.battlings_stage_round_time_seconds
+
+    def _capture_marked_fields(self) -> None:
+        captured = self._capture.capture_marked_fields()
+        self.register_event(
+            events.MarkedFieldsCaptured(
+                game_id=self.get_id(),
+                fields=[
+                    events.FieldCaptured(
+                        field=events.Field(id=field.get_id()),
+                        player=events.Player(id=field.get_owner().get_id()),
+                        new_field_value=field.get_value(),
                     )
-                    for result_line in round_result
+                    for field in captured
                 ],
             ),
         )
+
+    def _stop_capture_stage_round(self) -> None:
+        self._capture.stop_round()
+        self.register_event(events.RoundFinished(game_id=self.get_id()))
 
     def get_duel_category(self) -> int:
         return self._battle._duel._category_id
 
     def _is_battle_stage_continuing(self) -> bool:
         return not self._battle.get_round_number() == game_settings.duel_max_rounds - 1
+
+    def _finish_duel(self) -> None:
+        self._state = enums.GameState.BATTLING_STAGE
+        duel_result = self._battle.stop_duel()
+        if duel_result.result_type == events.ResultType.CAPTURED:
+            result = events.FieldCaptured(
+                field=events.Field(id=duel_result.field.get_id()),
+                player=events.Player(id=duel_result.field.get_owner().get_id()),
+                new_field_value=duel_result.field.get_value(),
+            )
+        else:
+            result = events.FieldDefended(
+                field=events.Field(id=duel_result.field.get_id()),
+                new_field_value=duel_result.field.get_value(),
+            )
+        self.register_event(
+            events.DuelFinished(
+                game_id=self.get_id(),
+                result_type=duel_result.result_type,
+                result=result,
+            ),
+        )
+
+    def _calculate_results(self) -> list[GameResultLine]:
+        sorted_players = sorted(self._players, key=lambda player: player.calculate_score(), reverse=True)
+        return [
+            GameResultLine(place=place, player=player, score=player.calculate_score())
+            for place, player in enumerate(sorted_players, 1)
+        ]
+
+    def finish(self) -> None:
+        self._state = enums.GameState.ENDED
+        self.register_event(
+            events.GameFinished(
+                game_id=self.get_id(),
+                results=[
+                    events.GameResultLine(
+                        place=result.place,
+                        player=events.Player(id=result.player.get_id()),
+                        score=result.score,
+                    )
+                    for result in self._calculate_results()
+                ],
+            ),
+        )
