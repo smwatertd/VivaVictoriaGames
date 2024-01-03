@@ -3,6 +3,7 @@ from datetime import datetime
 from domain.models.captured_field import CapturedField
 from domain.models.field import Field
 from domain.models.marked_field import MarkField
+from domain.models.player_answer import PlayerAnswer
 
 
 class Player:
@@ -31,6 +32,13 @@ class Player:
     def on_connect(self) -> None:
         self._connected_at = datetime.utcnow()
 
+    def on_disconnect(self) -> None:
+        self._connected_at = None
+        self._answer_id = None
+        self._answered_at = None
+        self._fields = []
+        self._marked_field = None
+
     def get_connected_at(self) -> datetime:
         assert self._connected_at
         return self._connected_at
@@ -41,13 +49,13 @@ class Player:
                 return field
         raise ValueError('Player has no base field')
 
-    def set_answer(self, answer: int) -> None:
-        self._answer_id = answer
+    def set_answer(self, answer: PlayerAnswer) -> None:
+        self._answer_id = answer.id
         self._answered_at = datetime.utcnow()
 
-    def get_answer(self) -> int:
+    def get_answer(self) -> PlayerAnswer:
         assert self._answer_id, 'Player is not answered'
-        return self._answer_id
+        return PlayerAnswer(id=self._answer_id)
 
     def clear_answer(self) -> None:
         self._answer_id = None
@@ -80,9 +88,7 @@ class Player:
     def capture(self, field: Field) -> None:
         captured_field = CapturedField(field, self)
         self._fields.append(captured_field)
+        field.on_capture()
 
-    def get_captured_field(self, field: Field) -> CapturedField:
-        for captured_field in self._fields:
-            if captured_field.get_field() == field:
-                return captured_field
-        raise ValueError('Field is not captured')
+    def calculate_score(self) -> int:
+        return sum(field.get_value() for field in self._fields)
