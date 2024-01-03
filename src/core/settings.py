@@ -60,7 +60,7 @@ class DatabaseSettings(BaseSettings):
 
 class GameSettings(BaseSettings):
     players_count_to_start: int = 2
-    fields_count: int = 5
+    fields_count: int = 3
 
     preparatory_stage_round_time_seconds: int = 30
     base_field_value: int = 10
@@ -68,6 +68,7 @@ class GameSettings(BaseSettings):
     capturing_stage_round_time_seconds: int = 30
 
     battlings_stage_rounds_count: int = 1
+    battlings_stage_round_time_seconds: int = 30
 
     duel_max_rounds: int = 3
 
