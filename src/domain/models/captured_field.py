@@ -33,5 +33,8 @@ class CapturedField:
         self._owner = owner
         self._field.on_capture()
 
+    def on_capture(self) -> None:
+        self._field.on_capture()
+
     def on_defend(self) -> None:
         self._field.on_defend()
