@@ -1,81 +1,8 @@
-from enum import Enum
 from typing import Any
 
+from domain import enums, event_models
+
 from pydantic import BaseModel
-
-
-class Player(BaseModel):
-    id: int
-
-
-class Field(BaseModel):
-    id: int
-
-
-class GameResultLine(BaseModel):
-    place: int
-    player: Player
-    score: int
-
-
-class StageType(str, Enum):
-    PREPARATORY = 'PREPARATORY'
-    CAPTURING = 'CAPTURING'
-    BATTLINGS = 'BATTLINGS'
-
-
-class ResultType(str, Enum):
-    CAPTURED = 'CAPTURED'
-    DEFENDED = 'DEFENDED'
-
-
-class FieldCaptured(BaseModel):
-    field: Field
-    player: Player
-    new_field_value: int
-
-
-class FieldDefended(BaseModel):
-    field: Field
-    new_field_value: int
-
-
-class StageInfo(BaseModel):
-    rounds_count: int
-
-
-class RoundType(str, Enum):
-    ORDERED = 'ORDERED'
-    UNORDERED = 'UNORDERED'
-
-
-class Category(BaseModel):
-    id: int
-    name: str
-
-
-class Answer(BaseModel):
-    id: int
-    body: str
-
-
-class Question(BaseModel):
-    body: str
-    answers: list[Answer]
-
-
-class ExplicitAnswer(BaseModel):
-    id: int
-
-
-class PlayerAnswer(BaseModel):
-    player: Player
-    answer: ExplicitAnswer
-
-
-class MarkedField(BaseModel):
-    player: Player
-    field: Field
 
 
 class Event(BaseModel):
@@ -87,47 +14,43 @@ class GameEvent(Event):
 
 
 class PlayerAdded(GameEvent):
-    player: Player
-    connected_players: list[Player]
+    player: event_models.Player
+    connected: list[event_models.Player]
 
 
 class PlayerRemoved(GameEvent):
-    player: Player
+    player: event_models.Player
 
 
 class GameStarted(GameEvent):
-    fields: list[Field]
-    order: list[Player]
+    fields: list[event_models.Field]
+    order: list[event_models.Player]
 
 
 class GameFinished(GameEvent):
-    results: list[GameResultLine]
+    results: list[event_models.PlayerResult]
 
 
 class StageStarted(GameEvent):
-    stage_type: StageType
-    stage_info: StageInfo | None = None
+    name: enums.StageName
+    info: event_models.StageInfo | None = None
 
-    def model_dump(self, **kwargs: Any) -> dict:
-        if self.stage_type == StageType.CAPTURING and self.stage_info is not None:
-            raise ValueError('Capturing stage must not have stage info')
-        return super().model_dump(exclude_none=True, **kwargs)
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        return super().model_dump(**kwargs, exclude_none=True)
 
 
 class StageFinished(GameEvent):
-    stage_type: StageType
+    name: enums.StageName
 
 
 class RoundStarted(GameEvent):
-    round_type: RoundType
-    round_number: int
-    duration_seconds: int
-    player: Player | None = None
+    ordered: bool
+    number: int
+    duration: event_models.Duration
+    player: event_models.Player | None = None
 
-    def model_dump(self, **kwargs: Any) -> dict:
-        if self.round_type == RoundType.UNORDERED and self.player is not None:
-            raise ValueError('Unordered round must not have player')
-        return super().model_dump(exclude_none=True, **kwargs)
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        return super().model_dump(**kwargs, exclude_none=True)
 
 
 class RoundFinished(GameEvent):
@@ -135,74 +58,73 @@ class RoundFinished(GameEvent):
 
 
 class BaseSelected(GameEvent):
-    player: Player
-    field: Field
-    new_field_value: int
+    player: event_models.Player
+    field: event_models.CapturedField
 
 
-class QuestionSetted(GameEvent):
-    question: Question
+class QuestionSelected(GameEvent):
+    question: event_models.Question
 
 
-class PlayerAnsweredImplicitly(GameEvent):
-    player: Player
+class PlayerAnswered(GameEvent):
+    player: event_models.Player
 
 
 class AllPlayersAnswered(GameEvent):
-    answers: list[PlayerAnswer]
+    answers: list[event_models.PlayerAnswer]
 
 
-class PlayerImplicitlyMarkedField(GameEvent):
-    player: Player
+class PlayerMarkedUnknownField(GameEvent):
+    player: event_models.Player
 
 
 class AllPlayersMarkedFields(GameEvent):
-    marked_fields: list[MarkedField]
-
-
-class MarkingConflictDetected(GameEvent):
-    field: Field
-    players: list[Player]
+    fields: list[event_models.MarkedField]
 
 
 class MarkedFieldsCaptured(GameEvent):
-    fields: list[FieldCaptured]
+    fields: list[event_models.CapturedField]
+
+
+class MarkingConflictDetected(GameEvent):
+    field: event_models.Field
+    players: list[event_models.Player]
 
 
 class MarkingBattleStarted(GameEvent):
-    players: list[Player]
-    field: Field
-    category: Category
+    players: list[event_models.Player]
+    field: event_models.Field
+    category: event_models.Category
 
 
 class MarkingBattleFinished(GameEvent):
-    winner: Player
+    winner: event_models.Player
 
 
 class FieldAttacked(GameEvent):
-    attacker: Player
-    defender: Player
-    field: Field
+    attacker: event_models.Player
+    defender: event_models.Player
+    field: event_models.Field
 
 
 class DuelStarted(GameEvent):
-    attacker: Player
-    defender: Player
-    field: Field
-    category: Category
-
-
-class DuelFinished(GameEvent):
-    result_type: ResultType
-    result: FieldDefended | FieldCaptured
+    attacker: event_models.Player
+    defender: event_models.Player
+    field: event_models.Field
+    category: event_models.Category
 
 
 class DuelRoundStarted(GameEvent):
     game_id: int
     round_number: int
-    duration_seconds: int
-    category: Category
+    duration: event_models.Duration
+    category: event_models.BasicCategory
 
 
 class DuelRoundFinished(GameEvent):
     pass
+
+
+class DuelFinished(GameEvent):
+    result_type: enums.ResultType
+    result: event_models.DefendedField | event_models.CapturedField
