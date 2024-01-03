@@ -1,14 +1,7 @@
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel
-
-
-class Event(BaseModel):
-    pass
-
-
-class GameEvent(Event):
-    game_id: int
 
 
 class Player(BaseModel):
@@ -47,6 +40,52 @@ class FieldDefended(BaseModel):
     new_field_value: int
 
 
+class StageInfo(BaseModel):
+    rounds_count: int
+
+
+class RoundType(str, Enum):
+    ORDERED = 'ORDERED'
+    UNORDERED = 'UNORDERED'
+
+
+class Category(BaseModel):
+    id: int
+    name: str
+
+
+class Answer(BaseModel):
+    id: int
+    body: str
+
+
+class Question(BaseModel):
+    body: str
+    answers: list[Answer]
+
+
+class ExplicitAnswer(BaseModel):
+    id: int
+
+
+class PlayerAnswer(BaseModel):
+    player: Player
+    answer: ExplicitAnswer
+
+
+class MarkedField(BaseModel):
+    player: Player
+    field: Field
+
+
+class Event(BaseModel):
+    pass
+
+
+class GameEvent(Event):
+    game_id: int
+
+
 class PlayerAdded(GameEvent):
     player: Player
     connected_players: list[Player]
@@ -65,226 +104,105 @@ class GameFinished(GameEvent):
     results: list[GameResultLine]
 
 
-class LimitedByRoundsStageStarted(GameEvent):
+class StageStarted(GameEvent):
     stage_type: StageType
-    rounds_count: int
+    stage_info: StageInfo | None = None
 
-
-class OrderedRoundStarted(GameEvent):
-    player: Player
-    round_number: int
-    duration_seconds: int
-
-
-class RoundFinished(GameEvent):
-    result_type: ResultType
-    result: FieldDefended | FieldCaptured
+    def model_dump(self, **kwargs: Any) -> dict:
+        if self.stage_type == StageType.CAPTURING and self.stage_info is not None:
+            raise ValueError('Capturing stage must not have stage info')
+        return super().model_dump(exclude_none=True, **kwargs)
 
 
 class StageFinished(GameEvent):
     stage_type: StageType
 
 
-class SelectingBaseStageRoundFinished(GameEvent):
-    pass
-
-
-class FieldAttacked(Event):
-    game_id: int
-    attacker_id: int
-    defender_id: int
-    field_id: int
-
-
-class PlayerFieldAttacked(Event):
-    game_id: int
-    attacker_id: int
-    defender_id: int
-    field_id: int
-
-
-class DuelPlayer(BaseModel):
-    id: int
-
-
-class DuelStarted(GameEvent):
-    attacker_id: int
-    defender_id: int
-    field_id: int
-
-
-class DuelCategorySetted(GameEvent):
-    category_id: int
-
-
-class QuestionSetted(Event):
-    game_id: int
-    question_id: int
-
-
-class RoundStarted(Event):
-    game_id: int
+class RoundStarted(GameEvent):
+    round_type: RoundType
     round_number: int
-    player_order_id: int
+    duration_seconds: int
+    player: Player | None = None
+
+    def model_dump(self, **kwargs: Any) -> dict:
+        if self.round_type == RoundType.UNORDERED and self.player is not None:
+            raise ValueError('Unordered round must not have player')
+        return super().model_dump(exclude_none=True, **kwargs)
 
 
-class DuelRoundStarted(Event):
-    game_id: int
-    round_number: int
-
-
-class CategorySetted(Event):
-    game_id: int
-    category_id: int
-
-
-class DuelRoundFinished(Event):
-    game_id: int
-
-
-class DuelEnded(Event):
-    game_id: int
-
-
-class PlayerAnswered(Event):
-    game_id: int
-    player_id: int
-
-
-class RoundTimerStarted(Event):
-    game_id: int
-    round_number: int
-    duration: int
-
-
-class DuelRoundTimerStarted(Event):
-    game_id: int
-    round_number: int
-    duel_round_number: int
-    duration: int
-
-
-class PreparingStageStarted(GameEvent):
+class RoundFinished(GameEvent):
     pass
-
-
-class PreparingStageEnded(GameEvent):
-    pass
-
-
-class PreparatoryStageStarted(GameEvent):
-    rounds_count: int
-
-
-class SelectingBaseStageEnded(GameEvent):
-    pass
-
-
-class SelectingBaseStageRoundStarted(GameEvent):
-    player_id: int
-    duration: int
-    round_number: int
-
-
-class PlayerSelectedBase(GameEvent):
-    pass
-
-
-class SelectingBaseStageFinished(GameEvent):
-    pass
-
-
-class CapturingStageStarted(GameEvent):
-    pass
-
-
-class CapturingStageFinished(GameEvent):
-    pass
-
-
-class CapturingStageRoundStarted(GameEvent):
-    duration: int
-    round_number: int
-
-
-class MarkingConflictPlayer(BaseModel):
-    id: int
-
-
-class MarkingConflictDetected(GameEvent):
-    field_id: int
-    players: list[MarkingConflictPlayer]
-
-
-class CaptureBattlePlayer(BaseModel):
-    id: int
-
-
-class CapturingBattleStarted(GameEvent):
-    players: list[CaptureBattlePlayer]
-    field_id: int
-
-
-class CapturingBattleCategorySetted(GameEvent):
-    category_id: int
-
-
-class CapturingBattleQuestionSetted(GameEvent):
-    question_id: int
-
-
-class CapturingBattlePlayerAnswered(GameEvent):
-    player_id: int
-
-
-class CapturedField(BaseModel):
-    field_id: int
-    new_field_value: int
-    player_id: int
-
-
-class CapturingStageRoundFinished(GameEvent):
-    captured_fields: list[CapturedField]
 
 
 class BaseSelected(GameEvent):
     player: Player
     field: Field
+    new_field_value: int
 
 
-class FieldMarked(GameEvent):
-    player_id: int
+class QuestionSetted(GameEvent):
+    question: Question
 
 
-class PlayerMarkedField(BaseModel):
-    player_id: int
-    field_id: int
+class PlayerAnsweredImplicitly(GameEvent):
+    player: Player
 
 
-class FieldsMarked(GameEvent):
-    marked_fields: list[PlayerMarkedField]
+class AllPlayersAnswered(GameEvent):
+    answers: list[PlayerAnswer]
+
+
+class PlayerImplicitlyMarkedField(GameEvent):
+    player: Player
 
 
 class AllPlayersMarkedFields(GameEvent):
-    pass
+    marked_fields: list[MarkedField]
 
 
-class BattlingsStageStarted(GameEvent):
-    rounds_count: int
+class MarkingConflictDetected(GameEvent):
+    field: Field
+    players: list[Player]
 
 
-class BattlingsStageEnded(GameEvent):
-    pass
+class MarkedFieldsCaptured(GameEvent):
+    fields: list[FieldCaptured]
 
 
-class BattlingsStageRoundStarted(GameEvent):
-    player_id: int
+class MarkingBattleStarted(GameEvent):
+    players: list[Player]
+    field: Field
+    category: Category
+
+
+class MarkingBattleFinished(GameEvent):
+    winner: Player
+
+
+class FieldAttacked(GameEvent):
+    attacker: Player
+    defender: Player
+    field: Field
+
+
+class DuelStarted(GameEvent):
+    attacker: Player
+    defender: Player
+    field: Field
+    category: Category
+
+
+class DuelFinished(GameEvent):
+    result_type: ResultType
+    result: FieldDefended | FieldCaptured
+
+
+class DuelRoundStarted(GameEvent):
+    game_id: int
     round_number: int
+    duration_seconds: int
+    category: Category
 
 
-class BattlingsStageRoundEnded(GameEvent):
+class DuelRoundFinished(GameEvent):
     pass
-
-
-class CaptureConflictPlayerAnswered(GameEvent):
-    player_id: int
