@@ -6,5 +6,5 @@ from domain.models.player import Player
 
 @dataclass(frozen=True, slots=True)
 class MarkingConflict:
-    players: list[Player]
+    players: tuple[Player, ...]
     field: Field
