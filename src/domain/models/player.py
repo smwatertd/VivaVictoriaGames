@@ -3,7 +3,7 @@ from datetime import datetime
 from domain import value_objects
 from domain.models.captured_field import CapturedField
 from domain.models.field import Field
-from domain.models.marked_field import MarkField
+from domain.models.marked_field import MarkedField
 
 
 class Player:
@@ -14,7 +14,7 @@ class Player:
         answer_id: int | None,
         answered_at: datetime | None,
         fields: list['CapturedField'],
-        marked_field: 'MarkField | None',
+        marked_field: 'MarkedField | None',
     ) -> None:
         self._id = id
         self._connected_at = connected_at
@@ -70,12 +70,12 @@ class Player:
         captured_field.mark_as_base()
 
     def mark_field(self, field: Field) -> None:
-        self._marked_field = MarkField(field)
+        self._marked_field = MarkedField(field)
 
     def is_marked_field(self) -> bool:
         return self._marked_field is not None
 
-    def get_marked_field(self) -> MarkField:
+    def get_marked_field(self) -> MarkedField:
         assert self._marked_field
         return self._marked_field
 

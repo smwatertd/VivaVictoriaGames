@@ -4,6 +4,6 @@ from domain.models.captured_field import CapturedField
 from domain.models.duel import Duel
 from domain.models.field import Field
 from domain.models.game import Game
-from domain.models.marked_field import MarkField
+from domain.models.marked_field import MarkedField
 from domain.models.player import Player
 from domain.models.preparation import Preparation

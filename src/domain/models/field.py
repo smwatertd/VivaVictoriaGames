@@ -5,7 +5,7 @@ from core.settings import game_settings
 
 if TYPE_CHECKING:
     from domain.models.captured_field import CapturedField
-    from domain.models.marked_field import MarkField
+    from domain.models.marked_field import MarkedField
     from domain.models.player import Player
 
 
@@ -15,7 +15,7 @@ class Field:
         id: int,
         value: int,
         captured: 'CapturedField | None',
-        marked_field: 'MarkField | None',
+        marked_field: 'MarkedField | None',
     ) -> None:
         self._id = id
         self._value = value

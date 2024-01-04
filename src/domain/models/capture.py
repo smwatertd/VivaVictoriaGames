@@ -2,7 +2,7 @@ from typing import Iterable
 
 from domain import value_objects
 from domain.models.field import Field
-from domain.models.marked_field import MarkField
+from domain.models.marked_field import MarkedField
 from domain.models.player import Player
 from domain.resolvers import ConflictResolver
 
@@ -13,7 +13,7 @@ class Capture:
         id: int,
         round_number: int,
         correct_answer_id: int | None,
-        marked_fields: list[MarkField],
+        marked_fields: list[MarkedField],
         conflict_resolver: ConflictResolver,
     ) -> None:
         self._id = id
@@ -77,14 +77,14 @@ class Capture:
         except ValueError:
             return False
 
-    def _get_marked_field(self, field: Field) -> MarkField:
+    def _get_marked_field(self, field: Field) -> MarkedField:
         for marked_field in self._marked_fields:
             if marked_field.get_field() == field:
                 return marked_field
         raise ValueError('Field is not marked')
 
     def _add_new_marked_field(self, player: Player, field: Field) -> None:
-        marked_field = MarkField(field, [player])
+        marked_field = MarkedField(field, [player])
         self._marked_fields.append(marked_field)
 
     def _clear_players_answer(self, players: Iterable[Player]) -> None:

@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from domain.models.player import Player
 
 
-class MarkField:
+class MarkedField:
     def __init__(self, field: Field, players: list['Player']) -> None:
         self._field = field
         self._players: list['Player'] = players
