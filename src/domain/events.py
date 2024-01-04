@@ -125,5 +125,5 @@ class DuelRoundFinished(GameEvent):
 
 
 class DuelFinished(GameEvent):
-    result_type: enums.ResultType
+    captured: bool
     result: event_models.DefendedField | event_models.CapturedField
