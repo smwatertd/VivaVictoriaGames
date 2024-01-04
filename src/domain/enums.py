@@ -13,23 +13,7 @@ class GameState(str, Enum):
     ENDED = 'ENDED'
 
 
-class StageType(str, Enum):
-    PREPARATORY = 'PREPARATORY'
-    CAPTURING = 'CAPTURING'
-    BATTLINGS = 'BATTLINGS'
-
-
 class StageName(str, Enum):
     PREPARATORY = 'PREPARATORY'
     CAPTURING = 'CAPTURING'
     BATTLINGS = 'BATTLINGS'
-
-
-class ResultType(str, Enum):
-    CAPTURED = 'CAPTURED'
-    DEFENDED = 'DEFENDED'
-
-
-class RoundType(str, Enum):
-    ORDERED = 'ORDERED'
-    UNORDERED = 'UNORDERED'
