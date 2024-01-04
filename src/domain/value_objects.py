@@ -1,7 +1,10 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from domain.models.field import Field
-from domain.models.player import Player
+
+if TYPE_CHECKING:
+    from domain.models.field import Field
+    from domain.models.player import Player
 
 
 @dataclass(slots=True, frozen=True)
@@ -23,13 +26,13 @@ class Category:
 @dataclass(slots=True, frozen=True)
 class DuelResult:
     is_captured: bool
-    field: Field
+    field: 'Field'
 
 
 @dataclass(slots=True, frozen=True)
 class MarkingConflict:
-    players: tuple[Player, ...]
-    field: Field
+    players: tuple['Player', ...]
+    field: 'Field'
 
 
 @dataclass(slots=True, frozen=True)
@@ -49,5 +52,5 @@ class Question:
 @dataclass(slots=True, frozen=True)
 class PlayerResult:
     place: int
-    player: Player
+    player: 'Player'
     score: int
