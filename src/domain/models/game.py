@@ -202,7 +202,7 @@ class Game:
             self.register_event(
                 events.AllPlayersMarkedFields(
                     game_id=self.get_id(),
-                    marked_fields=[
+                    fields=[
                         event_models.MarkedField(
                             player=event_models.Player(id=player.get_id()),
                             field=event_models.Field(id=player.get_marked_field().get_id()),
@@ -425,7 +425,7 @@ class Game:
         )
 
     def _get_preparatory_stage_rounds_count(self) -> int:
-        return self._get_players_count()
+        return game_settings.players_count_to_start
 
     def _get_preparatory_stage_round_seconds_duration(self) -> int:
         return game_settings.preparatory_stage_round_time_seconds

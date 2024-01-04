@@ -47,7 +47,7 @@ class Battle:
         return self._duel.stop()
 
     def get_duel_players(self) -> list[Player]:
-        return [self._duel.get_players()]
+        return self._duel.get_players()
 
     def get_duel_correct_answer(self) -> value_objects.Answer:
         return self._duel.get_correct_answer()

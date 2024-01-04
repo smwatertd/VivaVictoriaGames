@@ -23,17 +23,17 @@ class SQLAlchemyGamesRepository(GamesRepository):
                 joinedload(models.Game._preparation),
                 joinedload(models.Game._capture)
                 .joinedload(models.Capture._marked_fields)
-                .joinedload(models.MarkField._players),
+                .joinedload(models.MarkedField._players),
                 joinedload(models.Game._capture)
                 .joinedload(models.Capture._marked_fields)
-                .joinedload(models.MarkField._field),
+                .joinedload(models.MarkedField._field),
                 joinedload(models.Game._battle).joinedload(models.Battle._duel),
                 joinedload(models.Game._players)
                 .joinedload(models.Player._fields)
                 .joinedload(models.CapturedField._field),
                 joinedload(models.Game._players)
                 .joinedload(models.Player._marked_field)
-                .joinedload(models.MarkField._field),
+                .joinedload(models.MarkedField._field),
                 joinedload(models.Game._fields)
                 .joinedload(models.Field._captured)
                 .joinedload(models.CapturedField._owner),
