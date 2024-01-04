@@ -115,7 +115,7 @@ class DuelStarted(GameEvent):
 
 class DuelRoundStarted(GameEvent):
     game_id: int
-    round_number: int
+    number: int
     duration: event_models.Duration
     category: event_models.BasicCategory
 
