@@ -1,4 +1,4 @@
-from domain.models import Answer, Question
+from domain.value_objects import Answer, Question
 
 from infrastructure.ports.clients import HTTPClient
 

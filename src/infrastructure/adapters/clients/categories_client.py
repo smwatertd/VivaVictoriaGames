@@ -1,6 +1,6 @@
 from random import choice
 
-from domain.models import Category
+from domain.value_objects import Category
 
 from infrastructure.ports.clients import HTTPClient
 
