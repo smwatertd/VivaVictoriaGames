@@ -73,7 +73,7 @@ class AllPlayersAnswered(GameEvent):
     answers: list[event_models.PlayerAnswer]
 
 
-class PlayerMarkedUnknownField(GameEvent):
+class PlayerMarkedField(GameEvent):
     player: event_models.Player
 
 

@@ -190,7 +190,7 @@ class Game:
     def mark_field(self, player: Player, field: Field) -> None:
         self._capture.mark_field(player, field)
         self.register_event(
-            events.PlayerAnswered(
+            events.PlayerMarkedField(
                 game_id=self.get_id(),
                 player=event_models.Player(id=player.get_id()),
             ),

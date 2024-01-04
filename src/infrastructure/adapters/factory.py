@@ -17,13 +17,13 @@ class EventFactory(Factory):
         'RoundStarted': events.RoundStarted,
         'RoundFinished': events.RoundFinished,
 
-        'QuestionSetted': events.QuestionSetted,
-        'PlayerAnsweredImplicitly': events.PlayerAnsweredImplicitly,
+        'QuestionSelected': events.QuestionSelected,
+        'PlayerAnswered': events.PlayerAnswered,
         'AllPlayersAnswered': events.AllPlayersAnswered,
 
         'BaseSelected': events.BaseSelected,
 
-        'PlayerImplicitlyMarkedField': events.PlayerImplicitlyMarkedField,
+        'PlayerMarkedField': events.PlayerMarkedField,
         'AllPlayersMarkedFields': events.AllPlayersMarkedFields,
         'MarkedFieldsCaptured': events.MarkedFieldsCaptured,
         'MarkingConflictDetected': events.MarkingConflictDetected,
