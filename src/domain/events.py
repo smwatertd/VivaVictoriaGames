@@ -58,7 +58,6 @@ class RoundFinished(GameEvent):
 
 
 class BaseSelected(GameEvent):
-    player: event_models.Player
     field: event_models.CapturedField
 
 
