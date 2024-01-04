@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from domain.enums import ResultType
 from domain.models.field import Field
 from domain.models.player import Player
 
@@ -23,18 +22,11 @@ class Category:
 
 @dataclass(slots=True, frozen=True)
 class DuelResult:
-    result_type: ResultType
+    is_captured: bool
     field: Field
 
 
 @dataclass(slots=True, frozen=True)
-class GameResultLine:
-    place: int
-    player: Player
-    score: int
-
-
-@dataclass(frozen=True, slots=True)
 class MarkingConflict:
     players: tuple[Player, ...]
     field: Field
@@ -52,3 +44,10 @@ class Question:
     body: str
     answers: list[QuestionAnswer]
     correct_answer: QuestionAnswer
+
+
+@dataclass(slots=True, frozen=True)
+class PlayerResult:
+    place: int
+    player: Player
+    score: int
