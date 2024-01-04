@@ -84,3 +84,6 @@ class Duel:
 
     def get_players(self) -> list[Player]:
         return [self._attacker, self._defender]
+
+    def get_correct_answer(self) -> value_objects.Answer:
+        return value_objects.Answer(id=self._correct_answer_id)
