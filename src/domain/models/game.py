@@ -1,20 +1,18 @@
+from typing import Generator
+
 from core.settings import game_settings
 
-from domain import enums, events, exceptions
+from domain import enums, event_models, events, exceptions
+from domain import value_objects as vo
 from domain.models.battle import Battle
 from domain.models.capture import Capture
-from domain.models.category import Category
 from domain.models.field import Field
-from domain.models.game_result_line import GameResultLine
-from domain.models.model import Model
 from domain.models.player import Player
-from domain.models.player_answer import PlayerAnswer
 from domain.models.preparation import Preparation
-from domain.models.question import Question
 from domain.strategies import PlayerTurnSelector
 
 
-class Game(Model):
+class Game:
     def __init__(
         self,
         id: int,
@@ -37,6 +35,7 @@ class Game(Model):
         self._players = players
         self._fields = fields
         self._player_turn_selector = player_turn_selector
+        self._events: list[events.GameEvent] = []
 
     def get_id(self) -> int:
         return self._id
@@ -52,10 +51,10 @@ class Game(Model):
         if self._is_full():
             self._start()
 
-    def check_stage_outcome(self, finished_stage: events.StageType) -> None:
-        if finished_stage == events.StageType.PREPARATORY:
+    def check_stage_outcome(self, finished_stage: enums.StageType) -> None:
+        if finished_stage == enums.StageType.PREPARATORY:
             self.start_capturing_stage()
-        elif finished_stage == events.StageType.CAPTURING:
+        elif finished_stage == enums.StageType.CAPTURING:
             self.start_battlings_stage()
         else:
             self.finish()
@@ -90,7 +89,7 @@ class Game(Model):
         else:
             raise ValueError('Game is not in process')
 
-    def set_question(self, question: Question) -> None:
+    def set_question(self, question: vo.Question) -> None:
         if self._state == enums.GameState.CAPTURING_STAGE:
             self.set_capturing_question(question)
         elif self._state == enums.GameState.DUELING:
@@ -98,7 +97,7 @@ class Game(Model):
         else:
             raise ValueError('Game is not in process')
 
-    def set_player_answer(self, player: Player, answer: PlayerAnswer) -> None:
+    def set_player_answer(self, player: Player, answer: vo.Answer) -> None:
         self._set_player_answer(player, answer)
 
     def finish_battle_round(self) -> None:
@@ -128,8 +127,8 @@ class Game(Model):
         self.register_event(
             events.StageStarted(
                 game_id=self.get_id(),
-                stage_type=events.StageType.PREPARATORY,
-                stage_info=events.StageInfo(rounds_count=self._get_preparatory_stage_rounds_count()),
+                stage_type=enums.StageType.PREPARATORY,
+                stage_info=event_models.StageInfo(rounds_count=self._get_preparatory_stage_rounds_count()),
             ),
         )
 
@@ -138,10 +137,10 @@ class Game(Model):
         self.register_event(
             events.RoundStarted(
                 game_id=self.get_id(),
-                round_type=events.RoundType.ORDERED,
+                round_type=enums.RoundType.ORDERED,
                 round_number=self._preparation.get_round_number(),
                 duration_seconds=self._get_preparatory_stage_round_seconds_duration(),
-                player=events.Player(id=self._player_order.get_id()),
+                player=event_models.Player(id=self._player_order.get_id()),
             ),
         )
 
@@ -150,8 +149,8 @@ class Game(Model):
         self.register_event(
             events.BaseSelected(
                 game_id=self.get_id(),
-                player=events.Player(id=player.get_id()),
-                field=events.Field(id=field.get_id()),
+                player=event_models.Player(id=player.get_id()),
+                field=event_models.Field(id=field.get_id()),
                 new_field_value=field.get_value(),
             ),
         )
@@ -172,7 +171,7 @@ class Game(Model):
     def start_capturing_stage(self) -> None:
         self._capture.start()
         self._state = enums.GameState.CAPTURING_STAGE
-        self.register_event(events.StageStarted(game_id=self.get_id(), stage_type=events.StageType.CAPTURING))
+        self.register_event(events.StageStarted(game_id=self.get_id(), stage_type=enums.StageType.CAPTURING))
 
     def start_capturing_stage_round(self) -> None:
         self._capture.start_round()
@@ -180,7 +179,7 @@ class Game(Model):
         self.register_event(
             events.RoundStarted(
                 game_id=self.get_id(),
-                round_type=events.RoundType.UNORDERED,
+                round_type=enums.RoundType.UNORDERED,
                 round_number=self._capture.get_round_number(),
                 duration_seconds=self._get_capturing_stage_round_seconds_duration(),
             ),
@@ -217,7 +216,7 @@ class Game(Model):
         else:
             self._capture_marked_fields()
 
-    def start_marking_battle(self, players: list[Player], field: Field, category: Category) -> None:
+    def start_marking_battle(self, players: list[Player], field: Field, category: vo.Category) -> None:
         self.register_event(
             events.MarkingBattleStarted(
                 game_id=self.get_id(),
@@ -227,7 +226,7 @@ class Game(Model):
             ),
         )
 
-    def set_capturing_question(self, question: Question) -> None:
+    def set_capturing_question(self, question: vo.Question) -> None:
         self._capture.set_correct_answer(question.correct_answer)
         self.register_event(
             events.QuestionSetted(
@@ -305,7 +304,7 @@ class Game(Model):
             ),
         )
 
-    def start_duel(self, attacker: Player, defender: Player, field: Field, category: Category) -> None:
+    def start_duel(self, attacker: Player, defender: Player, field: Field, category: vo.Category) -> None:
         self._state = enums.GameState.DUELING
         self._battle.start_duel(attacker, defender, field, category)
         self.register_event(
@@ -332,7 +331,7 @@ class Game(Model):
             ),
         )
 
-    def set_duel_question(self, question: Question) -> None:
+    def set_duel_question(self, question: vo.Question) -> None:
         self._battle.set_duel_correct_answer(answer=question.correct_answer)
         self.register_event(
             events.QuestionSetted(
@@ -439,7 +438,7 @@ class Game(Model):
     def _get_capturing_stage_round_seconds_duration(self) -> int:
         return game_settings.capturing_stage_round_time_seconds
 
-    def _set_player_answer(self, player: Player, answer: PlayerAnswer) -> None:
+    def _set_player_answer(self, player: Player, answer: vo.Answer) -> None:
         player.set_answer(answer)
         self.register_event(
             events.PlayerAnsweredImplicitly(
@@ -540,10 +539,10 @@ class Game(Model):
             ),
         )
 
-    def _calculate_results(self) -> list[GameResultLine]:
+    def _calculate_results(self) -> list[vo.GameResultLine]:
         sorted_players = sorted(self._players, key=lambda player: player.calculate_score(), reverse=True)
         return [
-            GameResultLine(place=place, player=player, score=player.calculate_score())
+            vo.GameResultLine(place=place, player=player, score=player.calculate_score())
             for place, player in enumerate(sorted_players, 1)
         ]
 
@@ -562,3 +561,10 @@ class Game(Model):
                 ],
             ),
         )
+
+    def register_event(self, event: events.GameEvent) -> None:
+        self._events.append(event)
+
+    def collect_events(self) -> Generator[events.GameEvent, None, None]:
+        while self._events:
+            yield self._events.pop(0)
