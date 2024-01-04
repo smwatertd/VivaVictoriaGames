@@ -1,5 +1,5 @@
 from domain import events
-from domain.models import PlayerAnswer
+from domain.value_objects import Answer
 
 from infrastructure.ports import UnitOfWork
 
@@ -59,7 +59,7 @@ async def send_answer(command: commands.SendAnswer, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(command.game_pk)
         player = await uow.players.get(command.player_pk)
-        answer = PlayerAnswer(id=command.answer_pk)
+        answer = Answer(id=command.answer_pk)
         game.set_player_answer(player, answer)
         await uow.commit()
 
@@ -213,13 +213,13 @@ EVENT_HANDLERS = {
     events.RoundStarted: [],
     events.RoundFinished: [check_round_outcome],
 
-    events.QuestionSetted: [],
-    events.PlayerAnsweredImplicitly: [check_are_all_players_answered],
+    events.QuestionSelected: [],
+    events.PlayerAnswered: [check_are_all_players_answered],
     events.AllPlayersAnswered: [finish_battle_round],
 
     events.BaseSelected: [finish_round],
 
-    events.PlayerImplicitlyMarkedField: [check_are_all_players_marked_fields],
+    events.PlayerMarkedField: [check_are_all_players_marked_fields],
     events.AllPlayersMarkedFields: [check_marking_conflict],
     events.MarkedFieldsCaptured: [finish_round],
     events.MarkingConflictDetected: [start_marking_battle],
