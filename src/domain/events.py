@@ -121,7 +121,7 @@ class DuelRoundStarted(GameEvent):
 
 
 class DuelRoundFinished(GameEvent):
-    pass
+    correct: event_models.Answer
 
 
 class DuelFinished(GameEvent):
