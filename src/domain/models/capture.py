@@ -1,9 +1,8 @@
 from typing import Iterable
 
-from domain.models.answer import Answer
+from domain import value_objects
 from domain.models.field import Field
 from domain.models.marked_field import MarkField
-from domain.models.marking_conflict import MarkingConflict
 from domain.models.player import Player
 from domain.resolvers import ConflictResolver
 
@@ -26,7 +25,7 @@ class Capture:
     def get_round_number(self) -> int:
         return self._round_number
 
-    def set_correct_answer(self, answer: Answer) -> None:
+    def set_correct_answer(self, answer: value_objects.Answer) -> None:
         self._correct_answer_id = answer.id
 
     def start(self) -> None:
@@ -48,9 +47,9 @@ class Capture:
     def stop_round(self) -> None:
         self._round_number += 1
 
-    def get_marking_conflict(self) -> MarkingConflict:
+    def get_marking_conflict(self) -> value_objects.MarkingConflict:
         marked_field = [marked_field for marked_field in self._marked_fields if len(marked_field.get_players()) > 1][0]
-        return MarkingConflict(players=tuple(marked_field.get_players()), field=marked_field.get_field())
+        return value_objects.MarkingConflict(players=tuple(marked_field.get_players()), field=marked_field.get_field())
 
     def are_all_conflict_players_answered(self) -> bool:
         conflict = self.get_marking_conflict()

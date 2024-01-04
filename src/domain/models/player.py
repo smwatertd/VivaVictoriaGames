@@ -1,9 +1,9 @@
 from datetime import datetime
 
+from domain import value_objects
 from domain.models.captured_field import CapturedField
 from domain.models.field import Field
 from domain.models.marked_field import MarkField
-from domain.models.player_answer import PlayerAnswer
 
 
 class Player:
@@ -49,13 +49,13 @@ class Player:
                 return field
         raise ValueError('Player has no base field')
 
-    def set_answer(self, answer: PlayerAnswer) -> None:
+    def set_answer(self, answer: value_objects.Answer) -> None:
         self._answer_id = answer.id
         self._answered_at = datetime.utcnow()
 
-    def get_answer(self) -> PlayerAnswer:
+    def get_answer(self) -> value_objects.Answer:
         assert self._answer_id, 'Player is not answered'
-        return PlayerAnswer(id=self._answer_id)
+        return value_objects.Answer(id=self._answer_id)
 
     def clear_answer(self) -> None:
         self._answer_id = None

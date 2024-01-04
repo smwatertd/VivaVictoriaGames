@@ -1,7 +1,5 @@
-from domain.models.answer import Answer
-from domain.models.category import Category
+from domain import value_objects
 from domain.models.duel import Duel
-from domain.models.duel_result import DuelResult
 from domain.models.field import Field
 from domain.models.player import Player
 
@@ -21,7 +19,7 @@ class Battle:
     def get_round_number(self) -> int:
         return self._round_number
 
-    def start_duel(self, attacker: Player, defender: Player, field: Field, category: Category) -> None:
+    def start_duel(self, attacker: Player, defender: Player, field: Field, category: value_objects.Category) -> None:
         self._duel.start(attacker, defender, field.get_captured_field(), category)
 
     def get_duel_round(self) -> int:
@@ -33,14 +31,11 @@ class Battle:
     def finish_duel_round(self) -> None:
         self._duel.finish_round()
 
-    def get_duel_category(self) -> Category:
+    def get_duel_category(self) -> value_objects.Category:
         return self._duel.get_category()
 
-    def set_duel_correct_answer(self, answer: Answer) -> None:
+    def set_duel_correct_answer(self, answer: value_objects.Answer) -> None:
         self._duel.set_correct_answer(answer)
-
-    def set_player_answer(self, player: Player, answer: int) -> None:
-        self._duel.set_player_answer(player, answer)
 
     def are_all_duel_players_answered(self) -> bool:
         return self._duel.are_all_players_answered()
@@ -48,5 +43,8 @@ class Battle:
     def is_duel_continuing(self) -> bool:
         return self._duel.is_continuing()
 
-    def stop_duel(self) -> DuelResult:
+    def stop_duel(self) -> value_objects.DuelResult:
         return self._duel.stop()
+
+    def get_duel_players(self) -> list[Player]:
+        return [self._duel.get_players()]

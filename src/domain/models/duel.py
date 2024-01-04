@@ -1,9 +1,7 @@
 from core.settings import game_settings
 
-from domain.models.answer import Answer
+from domain import value_objects
 from domain.models.captured_field import CapturedField
-from domain.models.category import Category
-from domain.models.duel_result import DuelResult, ResultType
 from domain.models.player import Player
 
 
@@ -26,7 +24,7 @@ class Duel:
         self._defender = defender
         self._field = field
 
-    def start(self, attacker: Player, defender: Player, field: CapturedField, category: Category) -> None:
+    def start(self, attacker: Player, defender: Player, field: CapturedField, category: value_objects.Category) -> None:
         self._round_number = 1
         self._attacker = attacker
         self._defender = defender
@@ -44,17 +42,11 @@ class Duel:
     def finish_round(self) -> None:
         self._round_number += 1
 
-    def set_correct_answer(self, answer: Answer) -> None:
+    def set_correct_answer(self, answer: value_objects.Answer) -> None:
         self._correct_answer_id = answer.id
 
-    def get_category(self) -> Category:
-        return Category(id=self._category_id, name='')
-
-    def set_player_answer(self, player: Player, answer: int) -> None:
-        if player == self._attacker:
-            self._attacker.set_answer(answer)
-        else:
-            self._defender.set_answer(answer)
+    def get_category(self) -> value_objects.BasicCategory:
+        return value_objects.BasicCategory(id=self._category_id)
 
     def are_all_players_answered(self) -> bool:
         return self._attacker.is_answered() and self._defender.is_answered()
@@ -67,17 +59,17 @@ class Duel:
         is_both_won = attacker_answer.id == self._correct_answer_id and defender_answer.id == self._correct_answer_id
         return not finished_by_round_number and (is_both_lost or is_both_won)
 
-    def stop(self) -> DuelResult:
+    def stop(self) -> value_objects.DuelResult:
         if (
             self._attacker.get_answer().id == self._correct_answer_id
             and self._defender.get_answer().id != self._correct_answer_id
         ):
             self._field.set_owner(self._attacker)
             self._field.on_capture()
-            result = DuelResult(result_type=ResultType.CAPTURED, field=self._field)
+            result = value_objects.DuelResult(is_captured=True, field=self._field)
         else:
             self._field.on_defend()
-            result = DuelResult(result_type=ResultType.DEFENDED, field=self._field)
+            result = value_objects.DuelResult(is_captured=False, field=self._field)
 
         self._defender.clear_answer()
         self._attacker.clear_answer()
@@ -89,3 +81,6 @@ class Duel:
         self._round_number = 0
 
         return result
+
+    def get_players(self) -> list[Player]:
+        return [self._attacker, self._defender]
