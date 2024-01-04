@@ -51,10 +51,10 @@ class Game:
         if self._is_full():
             self._start()
 
-    def check_stage_outcome(self, finished_stage: enums.StageType) -> None:
-        if finished_stage == enums.StageType.PREPARATORY:
+    def check_stage_outcome(self, finished_stage: enums.StageName) -> None:
+        if finished_stage == enums.StageName.PREPARATORY:
             self.start_capturing_stage()
-        elif finished_stage == enums.StageType.CAPTURING:
+        elif finished_stage == enums.StageName.CAPTURING:
             self.start_battlings_stage()
         else:
             self.finish()
@@ -127,8 +127,8 @@ class Game:
         self.register_event(
             events.StageStarted(
                 game_id=self.get_id(),
-                stage_type=enums.StageType.PREPARATORY,
-                stage_info=event_models.StageInfo(rounds_count=self._get_preparatory_stage_rounds_count()),
+                name=enums.StageName.PREPARATORY,
+                info=event_models.StageInfo(rounds_count=self._get_preparatory_stage_rounds_count()),
             ),
         )
 
@@ -137,9 +137,9 @@ class Game:
         self.register_event(
             events.RoundStarted(
                 game_id=self.get_id(),
-                round_type=enums.RoundType.ORDERED,
-                round_number=self._preparation.get_round_number(),
-                duration_seconds=self._get_preparatory_stage_round_seconds_duration(),
+                ordered=True,
+                number=self._preparation.get_round_number(),
+                duration=event_models.Duration(seconds=self._get_preparatory_stage_round_seconds_duration()),
                 player=event_models.Player(id=self._player_order.get_id()),
             ),
         )
@@ -149,9 +149,11 @@ class Game:
         self.register_event(
             events.BaseSelected(
                 game_id=self.get_id(),
-                player=event_models.Player(id=player.get_id()),
-                field=event_models.Field(id=field.get_id()),
-                new_field_value=field.get_value(),
+                field=event_models.CapturedField(
+                    field=event_models.Field(id=field.get_id()),
+                    player=event_models.Player(id=player.get_id()),
+                    new_field_value=field.get_value(),
+                ),
             ),
         )
 
@@ -171,7 +173,7 @@ class Game:
     def start_capturing_stage(self) -> None:
         self._capture.start()
         self._state = enums.GameState.CAPTURING_STAGE
-        self.register_event(events.StageStarted(game_id=self.get_id(), stage_type=enums.StageType.CAPTURING))
+        self.register_event(events.StageStarted(game_id=self.get_id(), name=enums.StageName.CAPTURING))
 
     def start_capturing_stage_round(self) -> None:
         self._capture.start_round()
@@ -179,18 +181,18 @@ class Game:
         self.register_event(
             events.RoundStarted(
                 game_id=self.get_id(),
-                round_type=enums.RoundType.UNORDERED,
-                round_number=self._capture.get_round_number(),
-                duration_seconds=self._get_capturing_stage_round_seconds_duration(),
+                ordered=False,
+                number=self._capture.get_round_number(),
+                duration=event_models.Duration(seconds=self._get_capturing_stage_round_seconds_duration()),
             ),
         )
 
     def mark_field(self, player: Player, field: Field) -> None:
         self._capture.mark_field(player, field)
         self.register_event(
-            events.PlayerImplicitlyMarkedField(
+            events.PlayerAnswered(
                 game_id=self.get_id(),
-                player=events.Player(id=player.get_id()),
+                player=event_models.Player(id=player.get_id()),
             ),
         )
 
@@ -201,9 +203,9 @@ class Game:
                 events.AllPlayersMarkedFields(
                     game_id=self.get_id(),
                     marked_fields=[
-                        events.MarkedField(
-                            player=events.Player(id=player.get_id()),
-                            field=events.Field(id=player.get_marked_field().get_id()),
+                        event_models.MarkedField(
+                            player=event_models.Player(id=player.get_id()),
+                            field=event_models.Field(id=player.get_marked_field().get_id()),
                         )
                         for player in self._players
                     ],
@@ -220,35 +222,38 @@ class Game:
         self.register_event(
             events.MarkingBattleStarted(
                 game_id=self.get_id(),
-                players=[events.Player(id=player.get_id()) for player in players],
-                field=events.Field(id=field.get_id()),
-                category=events.Category(id=category.id, name=category.name),
+                players=[event_models.Player(id=player.get_id()) for player in players],
+                field=event_models.Field(id=field.get_id()),
+                category=event_models.Category(id=category.id, name=category.name),
             ),
         )
 
     def set_capturing_question(self, question: vo.Question) -> None:
         self._capture.set_correct_answer(question.correct_answer)
         self.register_event(
-            events.QuestionSetted(
+            events.QuestionSelected(
                 game_id=self.get_id(),
-                question=events.Question(
+                question=event_models.Question(
                     body=question.body,
-                    answers=[events.Answer(id=answer.id, body=answer.body) for answer in question.answers],
+                    answers=[
+                        event_models.QuestionAnswer(id=answer.id, body=answer.body) for answer in question.answers
+                    ],
                 ),
             ),
         )
 
     def _check_are_all_marking_battle_players_answered(self) -> None:
         if self._capture.are_all_conflict_players_answered():
+            conflict = self._capture.get_marking_conflict()
             self.register_event(
                 events.AllPlayersAnswered(
                     game_id=self.get_id(),
                     answers=[
-                        events.PlayerAnswer(
-                            player=events.Player(id=player.get_id()),
-                            answer=events.ExplicitAnswer(id=player.get_answer().id),
+                        event_models.PlayerAnswer(
+                            player=event_models.Player(id=player.get_id()),
+                            answer=event_models.Answer(id=player.get_answer().id),
                         )
-                        for player in self._players
+                        for player in conflict.players
                     ],
                 ),
             )
@@ -277,8 +282,8 @@ class Game:
         self.register_event(
             events.StageStarted(
                 game_id=self.get_id(),
-                stage_type=events.StageType.BATTLINGS,
-                stage_info=events.StageInfo(rounds_count=self._get_battlings_stage_rounds_count()),
+                name=enums.StageName.BATTLINGS,
+                stage_info=event_models.StageInfo(rounds_count=self._get_battlings_stage_rounds_count()),
             ),
         )
 
@@ -287,10 +292,10 @@ class Game:
         self.register_event(
             events.RoundStarted(
                 game_id=self.get_id(),
-                round_type=events.RoundType.ORDERED,
-                round_number=self._battle.get_round_number(),
-                duration_seconds=self._get_battlings_stage_round_seconds_duration(),
-                player=events.Player(id=self._player_order.get_id()),
+                ordered=True,
+                number=self._battle.get_round_number(),
+                duration=event_models.Duration(seconds=self._get_battlings_stage_round_seconds_duration()),
+                player=event_models.Player(id=self._player_order.get_id()),
             ),
         )
 
@@ -298,9 +303,9 @@ class Game:
         self.register_event(
             events.FieldAttacked(
                 game_id=self.get_id(),
-                attacker=events.Player(id=attacker.get_id()),
-                defender=events.Player(id=field.get_owner().get_id()),
-                field=events.Field(id=field.get_id()),
+                attacker=event_models.Player(id=attacker.get_id()),
+                defender=event_models.Player(id=field.get_owner().get_id()),
+                field=event_models.Field(id=field.get_id()),
             ),
         )
 
@@ -310,10 +315,10 @@ class Game:
         self.register_event(
             events.DuelStarted(
                 game_id=self.get_id(),
-                attacker=events.Player(id=attacker.get_id()),
-                defender=events.Player(id=defender.get_id()),
-                field=events.Field(id=field.get_id()),
-                category=events.Category(id=category.id, name=category.name),
+                attacker=event_models.Player(id=attacker.get_id()),
+                defender=event_models.Player(id=defender.get_id()),
+                field=event_models.Field(id=field.get_id()),
+                category=event_models.Category(id=category.id, name=category.name),
             ),
         )
 
@@ -322,23 +327,22 @@ class Game:
         self.register_event(
             events.DuelRoundStarted(
                 game_id=self.get_id(),
-                round_number=self._battle.get_duel_round(),
-                duration_seconds=self._get_duel_round_seconds_duration(),
-                category=events.Category(
-                    id=self._battle.get_duel_category().id,
-                    name=self._battle.get_duel_category().name,
-                ),
+                number=self._battle.get_duel_round(),
+                duration=event_models.Duration(seconds=self._get_duel_round_seconds_duration()),
+                category=event_models.BasicCategory(id=self._battle.get_duel_category().id),
             ),
         )
 
     def set_duel_question(self, question: vo.Question) -> None:
         self._battle.set_duel_correct_answer(answer=question.correct_answer)
         self.register_event(
-            events.QuestionSetted(
+            events.QuestionSelected(
                 game_id=self.get_id(),
-                question=events.Question(
+                question=event_models.Question(
                     body=question.body,
-                    answers=[events.Answer(id=answer.id, body=answer.body) for answer in question.answers],
+                    answers=[
+                        event_models.QuestionAnswer(id=answer.id, body=answer.body) for answer in question.answers
+                    ],
                 ),
             ),
         )
@@ -349,18 +353,19 @@ class Game:
                 events.AllPlayersAnswered(
                     game_id=self.get_id(),
                     answers=[
-                        events.PlayerAnswer(
-                            player=events.Player(id=player.get_id()),
-                            answer=events.ExplicitAnswer(id=player.get_answer().id),
+                        event_models.PlayerAnswer(
+                            player=event_models.Player(id=player.get_id()),
+                            answer=event_models.Answer(id=player.get_answer().id),
                         )
-                        for player in self._players
+                        for player in self._battle.get_duel_players()
                     ],
                 ),
             )
 
     def finish_duel_round(self) -> None:
+        answer = self._battle.get_duel_correct_answer()
         self._battle.finish_duel_round()
-        self.register_event(events.DuelRoundFinished(game_id=self.get_id()))
+        self.register_event(events.DuelRoundFinished(game_id=self.get_id(), correct=event_models.Answer(id=answer.id)))
 
     def check_duel_round_outcome(self) -> None:
         if self._battle.is_duel_continuing():
@@ -370,7 +375,7 @@ class Game:
 
     def finish_battlings_stage_round(self) -> None:
         self._battle.finish_round()
-        self.register_event(events.RoundFinished(game_id=self.get_id(), result_type=events.ResultType.DEFENDED))
+        self.register_event(events.RoundFinished(game_id=self.get_id()))
 
     def check_battlings_stage_round_outcome(self) -> None:
         if self._is_battle_stage_continuing():
@@ -393,15 +398,15 @@ class Game:
         self.register_event(
             events.PlayerAdded(
                 game_id=self.get_id(),
-                player=events.Player(id=player.get_id()),
-                connected_players=[events.Player(id=player.get_id()) for player in self._players],
+                player=event_models.Player(id=player.get_id()),
+                connected=[event_models.Player(id=player.get_id()) for player in self._players],
             ),
         )
 
     def _remove_player(self, player: Player) -> None:
         self._players.remove(player)
         player.on_disconnect()
-        self.register_event(events.PlayerRemoved(game_id=self.get_id(), player=events.Player(id=player.get_id())))
+        self.register_event(events.PlayerRemoved(game_id=self.get_id(), player=event_models.Player(id=player.get_id())))
 
     def _is_full(self) -> bool:
         return len(self._players) == game_settings.players_count_to_start
@@ -414,8 +419,8 @@ class Game:
         self.register_event(
             events.GameStarted(
                 game_id=self.get_id(),
-                fields=[events.Field(id=field.get_id()) for field in sorted_fields],
-                order=[events.Player(id=player.get_id()) for player in order],
+                fields=[event_models.Field(id=field.get_id()) for field in sorted_fields],
+                order=[event_models.Player(id=player.get_id()) for player in order],
             ),
         )
 
@@ -430,10 +435,10 @@ class Game:
 
     def _stop_selection_base_stage(self) -> None:
         self._state = enums.GameState.IN_PROCESS
-        self.register_event(events.StageFinished(game_id=self.get_id(), stage_type=events.StageType.PREPARATORY))
+        self.register_event(events.StageFinished(game_id=self.get_id(), name=enums.StageName.PREPARATORY))
 
     def _stop_capturing_stage(self) -> None:
-        self.register_event(events.StageFinished(game_id=self.get_id(), stage_type=events.StageType.CAPTURING))
+        self.register_event(events.StageFinished(game_id=self.get_id(), name=enums.StageName.CAPTURING))
 
     def _get_capturing_stage_round_seconds_duration(self) -> int:
         return game_settings.capturing_stage_round_time_seconds
@@ -441,9 +446,9 @@ class Game:
     def _set_player_answer(self, player: Player, answer: vo.Answer) -> None:
         player.set_answer(answer)
         self.register_event(
-            events.PlayerAnsweredImplicitly(
+            events.PlayerAnswered(
                 game_id=self.get_id(),
-                player=events.Player(id=player.get_id()),
+                player=event_models.Player(id=player.get_id()),
             ),
         )
 
@@ -452,7 +457,7 @@ class Game:
 
     def _stop_battlings_stage(self) -> None:
         self._state = enums.GameState.IN_PROCESS
-        self.register_event(events.StageFinished(game_id=self.get_id(), stage_type=events.StageType.BATTLINGS))
+        self.register_event(events.StageFinished(game_id=self.get_id(), name=enums.StageName.BATTLINGS))
 
     def _is_preparatory_stage_continuing(self) -> bool:
         return not self._get_players_count() == self._preparation.get_round_number() - 1
@@ -471,8 +476,8 @@ class Game:
         self.register_event(
             events.MarkingConflictDetected(
                 game_id=self.get_id(),
-                field=events.Field(id=conflict.field.get_id()),
-                players=[events.Player(id=player.get_id()) for player in conflict.players],
+                field=event_models.Field(id=conflict.field.get_id()),
+                players=[event_models.Player(id=player.get_id()) for player in conflict.players],
             ),
         )
 
@@ -481,7 +486,7 @@ class Game:
         self.register_event(
             events.MarkingBattleFinished(
                 game_id=self.get_id(),
-                winner=events.Player(id=winner.get_id()),
+                winner=event_models.Player(id=winner.get_id()),
             ),
         )
 
@@ -492,17 +497,16 @@ class Game:
         return game_settings.battlings_stage_round_time_seconds
 
     def _capture_marked_fields(self) -> None:
-        captured = self._capture.capture_marked_fields()
         self.register_event(
             events.MarkedFieldsCaptured(
                 game_id=self.get_id(),
                 fields=[
-                    events.FieldCaptured(
-                        field=events.Field(id=field.get_id()),
-                        player=events.Player(id=field.get_owner().get_id()),
+                    event_models.CapturedField(
+                        field=event_models.Field(id=field.get_id()),
+                        player=event_models.Player(id=field.get_owner().get_id()),
                         new_field_value=field.get_value(),
                     )
-                    for field in captured
+                    for field in self._capture.capture_marked_fields()
                 ],
             ),
         )
@@ -520,29 +524,29 @@ class Game:
     def _finish_duel(self) -> None:
         self._state = enums.GameState.BATTLING_STAGE
         duel_result = self._battle.stop_duel()
-        if duel_result.result_type == events.ResultType.CAPTURED:
-            result = events.FieldCaptured(
-                field=events.Field(id=duel_result.field.get_id()),
-                player=events.Player(id=duel_result.field.get_owner().get_id()),
+        if duel_result.is_captured:
+            result = event_models.CapturedField(
+                field=event_models.Field(id=duel_result.field.get_id()),
+                player=event_models.Player(id=duel_result.field.get_owner().get_id()),
                 new_field_value=duel_result.field.get_value(),
             )
         else:
-            result = events.FieldDefended(
-                field=events.Field(id=duel_result.field.get_id()),
+            result = event_models.DefendedField(
+                field=event_models.Field(id=duel_result.field.get_id()),
                 new_field_value=duel_result.field.get_value(),
             )
         self.register_event(
             events.DuelFinished(
                 game_id=self.get_id(),
-                result_type=duel_result.result_type,
+                captured=duel_result.is_captured,
                 result=result,
             ),
         )
 
-    def _calculate_results(self) -> list[vo.GameResultLine]:
+    def _calculate_results(self) -> list[vo.PlayerResult]:
         sorted_players = sorted(self._players, key=lambda player: player.calculate_score(), reverse=True)
         return [
-            vo.GameResultLine(place=place, player=player, score=player.calculate_score())
+            vo.PlayerResult(place=place, player=player, score=player.calculate_score())
             for place, player in enumerate(sorted_players, 1)
         ]
 
@@ -552,9 +556,9 @@ class Game:
             events.GameFinished(
                 game_id=self.get_id(),
                 results=[
-                    events.GameResultLine(
+                    event_models.PlayerResult(
                         place=result.place,
-                        player=events.Player(id=result.player.get_id()),
+                        player=event_models.Player(id=result.player.get_id()),
                         score=result.score,
                     )
                     for result in self._calculate_results()
