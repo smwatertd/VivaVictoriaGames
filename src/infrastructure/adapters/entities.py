@@ -178,7 +178,7 @@ def start_mappers() -> None:
                 foreign_keys=[captures.c.game_id],
             ),
             '_marked_fields': relationship(
-                models.MarkField,
+                models.MarkedField,
                 back_populates='_capture',
                 foreign_keys=[marked_fields.c.capture_id],
                 cascade='all, delete-orphan',
@@ -268,7 +268,7 @@ def start_mappers() -> None:
                 foreign_keys=[captured_fields.c.owner_id],
             ),
             '_marked_field': relationship(
-                models.MarkField,
+                models.MarkedField,
                 back_populates='_players',
                 uselist=False,
                 foreign_keys=[players.c.marked_field_id],
@@ -301,7 +301,7 @@ def start_mappers() -> None:
                 foreign_keys=[fields.c.game_id],
             ),
             '_marked_field': relationship(
-                models.MarkField,
+                models.MarkedField,
                 back_populates='_field',
                 uselist=False,
                 foreign_keys=[marked_fields.c.field_id],
@@ -316,7 +316,7 @@ def start_mappers() -> None:
     )
 
     mapper.map_imperatively(
-        models.MarkField,
+        models.MarkedField,
         marked_fields,
         properties={
             '_field': relationship(
