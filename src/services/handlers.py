@@ -172,7 +172,7 @@ async def check_round_process_outcome(event: events.DuelRoundFinished, uow: Unit
 async def check_stage_outcome(event: events.StageFinished, uow: UnitOfWork) -> None:
     async with uow:
         game = await uow.games.get(event.game_id)
-        game.check_stage_outcome(event.stage_type)
+        game.check_stage_outcome(event.name)
         await uow.commit()
 
 
